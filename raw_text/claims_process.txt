@@ -1,0 +1,52 @@
+Health Insurance Claims Process Guide
+Synthetic operational template for training and workflow testing
+Purpose. This guide describes a standard end-to-end process for receiving, validating, adjudicating, paying, denying, and appealing health insurance claims. It is suitable as a sample input for document extraction, workflow automation, and knowledge-base testing.
+1. Roles and Responsibilities
+2. Standard Claims Workflow
+Receive and log: Accept electronic or paper claims. Record date received, member ID, provider ID, service dates, billed amount, and claim type.
+Validate required data: Check for member identifier, patient relationship, diagnosis codes, procedure codes, place of service, units, provider identifiers, and itemized charges.
+Confirm eligibility: Verify that coverage was active on each date of service and that the patient was eligible under the contract.
+Check duplicates and coordination of benefits: Identify exact or near-duplicate claims and determine whether another payer is primary.
+Apply authorization and medical-policy rules: Confirm required referrals or prior authorizations. Route complex cases for clinical review.
+Price the claim: Apply contracted rates, fee schedules, bundling edits, deductible, copayment, coinsurance, and out-of-pocket accumulation.
+Adjudicate: Approve, partially approve, pend, or deny each service line. Record clear reason codes.
+Issue payment and explanation: Send payment to the correct payee and produce an explanation of benefits or remittance advice.
+Handle adjustments and appeals: Correct processing errors, recover overpayments where appropriate, and conduct timely appeal reviews.
+3. Intake Checklist
+Claim received date is captured.
+Member and patient identifiers match enrollment records.
+Provider name, tax identifier, and national provider identifier are present.
+Service dates are valid and not in the future.
+Diagnosis and procedure codes are syntactically valid.
+Billed charges and units are numeric and internally consistent.
+Attachments are present when required.
+Potential duplicate claims are flagged.
+4. Decision Outcomes
+5. Common Denial and Pend Reasons
+Eligibility: Coverage was inactive or the patient was not enrolled on the service date.
+Prior authorization: A required authorization was missing, expired, or did not match the service.
+Medical necessity: Submitted records did not support the service under the applicable policy.
+Coding: Diagnosis, procedure, modifier, units, or place-of-service information was invalid or inconsistent.
+Timely filing: The claim was received after the fictional 180-day filing limit.
+Coordination of benefits: Another insurer may be primary and additional information is needed.
+Duplicate: The same or substantially similar service was previously processed.
+6. Appeals Process
+1.  Submit a written appeal within 180 calendar days of the adverse determination.
+2.  Include the claim number, member name, service dates, disputed services, and the requested resolution.
+3.  Attach relevant medical records, authorization evidence, coding documentation, or proof of timely filing.
+4.  Acknowledge receipt within 5 business days.
+5.  Complete a standard appeal within 30 calendar days unless additional time is allowed by law or contract.
+6.  Send a written determination explaining the evidence reviewed, decision, and any further review rights.
+7. Quality-Control Rules
+Every denial must map to a documented rule and a member-friendly explanation.
+Clinical reviewers must be appropriately qualified for the issue reviewed.
+No employee may approve a payment to themselves or alter audit logs.
+All manual overrides require a reason and supervisor approval.
+Protected health information should be limited to the minimum necessary.
+Processing timeliness, overturn rate, rework rate, and financial accuracy should be monitored monthly.
+8. Example Service-Level Targets
+9. Sample Contact Block
+Northstar Health Plan - Claims Operations
+100 Example Avenue, Hartford, CT 06103
+Phone: 1-800-555-0188 | Fax: 1-800-555-0199
+Portal: https://example.invalid/claims

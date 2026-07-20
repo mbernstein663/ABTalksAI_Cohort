@@ -1,0 +1,109 @@
+
+--- Page 1 ---
+
+Summary of Benefits and Coverage: What This Plan Covers and What You
+Pay For Covered Services
+Northstar Health Plan: Silver Choice 2500
+Coverage Period: 01/01/2026 - 12/31/2026
+Coverage for: Individual + Family | Plan Type: PPO
+SYNTHETIC SAMPLE ONLY. This document is modeled after the structure of a Summary of Benefits and Coverage, but all
+names, amounts, phone numbers, and plan details are fictional.
+The Summary of Benefits and Coverage (SBC) document helps you choose a health plan. The SBC shows how you and the plan would share the cost
+for covered health care services. This is only a summary. For more information about your coverage, refer to the fictional plan document.
+Important Questions Answers Why This Matters
+What is the overall $2,500 individual / $5,000 family You generally must pay all costs from providers up to the deductible
+deductible? in-network; $5,000 individual / $10,000 before the plan begins to pay.
+family out-of-network.
+Are there services covered Yes. Preventive care, primary care visits, The plan covers some services even if you have not met the deductible.
+before you meet your and generic drugs are covered before the A copayment or coinsurance may still apply.
+deductible? deductible.
+Are there other deductibles No. You do not have to meet separate deductibles for specific services.
+for specific services?
+What is the out-of-pocket $7,500 individual / $15,000 family This is the most you could pay in a year for covered in-network
+limit? in-network; no combined out-of-network services.
+limit.
+What is not included in the Premiums, balance-billing charges, These expenses do not count toward your out-of-pocket limit.
+out-of-pocket limit? non-covered services, and penalties for
+failing to obtain preauthorization.
+Will you pay less if you use a Yes. Visit example.invalid/provider or call You pay the least when you use an in-network provider. Out-of-network
+network provider? 1-800-555-0188 for a list of network providers may bill you for the difference.
+providers.
+Do you need a referral to see No. You may see an in-network specialist without a referral.
+a specialist?
+Synthetic training sample - not an actual health plan document Page 1
+
+--- Page 2 ---
+
+Common Medical Events
+Copayments and coinsurance amounts shown below are after any applicable deductible unless the row says otherwise. All services must be medically
+necessary and may be subject to utilization review.
+Common Medical Event Services You May Need In-Network Provider Out-of-Network Provider Limitations, Exceptions, and Other
+Important Information
+If you visit a health care Primary care visit to treat an $30 copay; deductible does 50% coinsurance Virtual primary care visits: $10 copay.
+provider's office or clinic injury or illness not apply
+Specialist visit $60 copay; deductible does 50% coinsurance Certain specialty services require
+not apply preauthorization.
+Preventive care / screening / No charge 50% coinsurance You may have to pay for services that are not
+immunization preventive.
+If you have a test Diagnostic test (x-ray, blood 20% coinsurance 50% coinsurance Preauthorization may be required for
+work) advanced imaging.
+Imaging (CT/PET scans, 20% coinsurance 50% coinsurance $250 penalty for non-emergency imaging
+MRIs) without required authorization.
+If you need drugs to treat Generic drugs $15 retail / $30 mail order Not covered Up to 30-day retail or 90-day mail-order
+your illness or condition supply.
+Preferred brand drugs $45 retail / $90 mail order Not covered Step therapy may apply.
+Specialty drugs 30% coinsurance, up to $300 Not covered Must use designated specialty pharmacy.
+If you have outpatient Facility fee 20% coinsurance 50% coinsurance Preauthorization required.
+surgery
+Physician / surgeon fees 20% coinsurance 50% coinsurance Separate facility charges may apply.
+If you need immediate Emergency room care $400 copay then 20% Same as in-network Copay waived if admitted within 24 hours.
+medical attention coinsurance
+Urgent care $75 copay 50% coinsurance Non-emergency use of ER may not be
+covered.
+If you have a hospital stay Facility fee 20% coinsurance 50% coinsurance Preauthorization required except in
+emergencies.
+Physician / surgeon fees 20% coinsurance 50% coinsurance No additional charge beyond applicable
+coinsurance.
+Synthetic training sample - not an actual health plan document Page 2
+
+--- Page 3 ---
+
+Excluded Services and Other Covered Services
+Services Your Plan Generally Does NOT Cover Other Covered Services
+Cosmetic surgery Acupuncture - 12 visits per year
+Long-term care Chiropractic care - 20 visits per year
+Routine foot care Hearing aids - one device per ear every 36 months
+Weight-loss programs Infertility evaluation and limited treatment
+Non-emergency care outside the United States
+Your Rights to Continue Coverage
+There are agencies that can help if you want to continue coverage after it ends. Contact the fictional plan at 1-800-555-0188. Other coverage options
+may be available through a spouse's plan, Medicaid, Medicare, or a health insurance marketplace.
+Your Grievance and Appeals Rights
+If you have a complaint or disagree with a denial of coverage, you may appeal. Submit a written request within 180 days of the denial notice. For this
+synthetic example, send appeals to Northstar Health Plan, Appeals Unit, 100 Example Avenue, Hartford, CT 06103.
+Does this plan provide Minimum Essential Coverage? Yes.
+Does this plan meet Minimum Value Standards? Yes.
+Language Access Services
+Spanish: Para obtener asistencia en Espanol, llame al 1-800-555-0188.
+Chinese: For language assistance, call 1-800-555-0188.
+Tagalog: Para sa tulong sa wika, tumawag sa 1-800-555-0188.
+Synthetic training sample - not an actual health plan document Page 3
+
+--- Page 4 ---
+
+Coverage Examples
+These examples are not cost estimators. They show how the plan might cover sample medical situations. Actual costs depend on the services received,
+provider charges, and plan rules.
+Example Peg Is Having a Baby Managing Type 2 Diabetes Mia's Simple Fracture
+Sample care Prenatal visits, delivery, hospital Primary care visits, specialist visits, Emergency visit, x-ray, cast,
+stay, labs, anesthesia prescriptions, supplies follow-up visit
+Total sample cost $12,700 $5,600 $2,800
+Patient pays deductible $2,500 $1,900 $2,500
+Patient pays copays $250 $600 $75
+Patient pays coinsurance $1,900 $450 $45
+Patient pays $60 $20 $0
+limits/exclusions
+Total patient cost $4,710 $2,970 $2,620
+Important: All content in this document is fictional. It is intended for software testing, document-processing demonstrations,
+and training exercises only.
+Synthetic training sample - not an actual health plan document Page 4

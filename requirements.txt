@@ -2,3 +2,10 @@ pandas
 openpyxl
 ipykernel
 sqlite3
+pdfplumber 
+pypdf 
+python-docx 
+pytesseract 
+pdf2image 
+beautifulsoup4 
+requests

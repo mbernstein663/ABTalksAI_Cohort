@@ -1,0 +1,61 @@
+
+--- Page 1 ---
+
+NORTHSTAR HEALTH PLAN GROUP ENROLLMENT / CHANGE FO
+
+SYNTHETIC SAMPLE - NOT FOR ACTUAL ENROLLMENT
+
+SECTION 1 - TYPE OF REQUEST
+
+| New enrollment . Add dependent C] Address change CL] Terminate coverage C] Other
+Last name First name Middle initial
+
+Member / employee ID Date of birth (MM/DD/YYYY) Social Security number (last 4 only)
+
+EMP-004812 08/14/1994
+Home address
+
+42 Sample Street
+
+City Phone
+Hartford (860) 555-0142
+
+Email address
+
+taylor. morgan@example.invalid
+
+SECTION 3 - COVERAGE ELECTION
+
+C] Employee only C] Employee + spouse | Employee + child(ren) C] Family
+
+| Medical | Dental L] Vision Requested effective date: 01/01/2026
+
+SECTION 4 - DEPENDENT INFORMATION
+
+cue
+Jordan Morgan Child 03/22/2017
+
+Student / disabled
+
+a
+SECTION 5 - OTHER COVERAGE / COORDINATION OF BENEFITS
+
+Does any applicant have other health coverage? L] Yes | No
+
+If yes, list carrier, policy number, covered persons, and effective dates
+
+SECTION 6 - AUTHORIZATION AND SIGNATURE
+
+| certify that the information on this form is complete and correct to the best of my knowledge. | understand that
+
+this is a synthetie.sample and s not create actual insurance coverage.
+“Taytor|. Morgan 12/15/2025
+een: ik ee hl
+
+ee
+
+Employee signature Date
+
+For software testing, document extraction, and training demonstrations only. Form ID: SYN-ENR-2026-01
+
+M
