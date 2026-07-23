@@ -158,7 +158,7 @@ test_questions = [
     "What is the claim status for C1003, and how do I appeal if it was denied?"
 ]
 
-output = root / "test_results.md"
+output = root / "retrieval_test_results.md"
 
 with output.open("w", encoding="utf-8") as file:
     for question in test_questions:
