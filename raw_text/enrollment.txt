@@ -1,61 +1,97 @@
-
---- Page 1 ---
-
-NORTHSTAR HEALTH PLAN GROUP ENROLLMENT / CHANGE FO
+NORTHSTAR HEALTH PLAN GROUP ENROLLMENT / CHANGE FORM
 
 SYNTHETIC SAMPLE - NOT FOR ACTUAL ENROLLMENT
 
+DOCUMENT_SET_ID: NORTHSTAR_SYNTHETIC_PLAN_LIBRARY
+SCHEMA VERSION: 1.0
+
+SOURCE FILES: plans.csv | claims.csv
+
+PLAN_IDS: P101 | P102 | P103
+
+PLAN_NAMES: Gold PPO | Silver HMO | Bronze HMO.
+DATA_CLASSIFICATION: SYNTHETIC TRAINING ONLY
+
 SECTION 1 - TYPE OF REQUEST
 
-| New enrollment . Add dependent C] Address change CL] Terminate coverage C] Other
-Last name First name Middle initial
+New enrollment Add dependent LL Change plan [] Terminate coverage LL] other
 
-Member / employee ID Date of birth (MM/DD/YYYY) Social Security number (last 4 only)
+SECTION 2 - EMPLOYEE / SUBSCRIBER INFORMATION
 
-EMP-004812 08/14/1994
-Home address
+Last name First name
 
-42 Sample Street
+Morgan Taylor
 
-City Phone
-Hartford (860) 555-0142
+Middle initial
 
-Email address
+J
 
-taylor. morgan@example.invalid
+Member / employee ID Date of birth (MM/DD/YYYY)
 
-SECTION 3 - COVERAGE ELECTION
+M1001 08/14/1994
 
-C] Employee only C] Employee + spouse | Employee + child(ren) C] Family
+Email
 
-| Medical | Dental L] Vision Requested effective date: 01/01/2026
+taylor.morgan@example.invalid
+
+SECTION 3 - PLAN ELECTION
+
+Select | Plan ID Plan name Monthly premium Annual deductible
+
+Cost share Type / tier
+
+Gold PPO $500 $2,000
+
+PPO / Gold
+
+Silver HMO $300 $1,500
+
+HMO / Silver
+
+Bronze HMO $150 $1,000
+
+HMO / Bronze
+
+Selected plan schema linkage
+member_id: M1001 plan_id: P101 plan_name: Gold PPO
+monthly_premium: $500 | annual_deductible: $2,000 | copay_pct: 10 | network_tier: Gold
+
+coverage_type: PPO
 
 SECTION 4 - DEPENDENT INFORMATION
 
-cue
-Jordan Morgan Child 03/22/2017
+Dependent name Relationship Date of birth
 
 Student / disabled
 
-a
-SECTION 5 - OTHER COVERAGE / COORDINATION OF BENEFITS
+Jordan Morgan Child 03/22/2017
 
-Does any applicant have other health coverage? L] Yes | No
+No
 
-If yes, list carrier, policy number, covered persons, and effective dates
+Avery Morgan Child 11/09/2020
+
+No
+
+SECTION 5 - ACKNOWLEDGEMENTS
+
+[| | understand this is synthetic training data and not actual coverage.
+
+[7] | reviewed the selected plan values shown above.
+
+[7] | understand benefits not present in the supplied schema are not defined.
 
 SECTION 6 - AUTHORIZATION AND SIGNATURE
 
-| certify that the information on this form is complete and correct to the best of my knowledge. | understand that
+| certify that the synthetic information on this form is complete and consistent with the plan reference shown above
 
-this is a synthetie.sample and s not create actual insurance coverage.
-“Taytor|. Morgan 12/15/2025
-een: ik ee hl
+Taylor J. Morgan
 
-ee
+Employee signature
 
-Employee signature Date
+For software testing, document extraction, and training demonstrations only.
 
-For software testing, document extraction, and training demonstrations only. Form ID: SYN-ENR-2026-01
+04/12/2023
 
-M
+Date
+
+Form ID: SYN-ENROLL-P101-2023

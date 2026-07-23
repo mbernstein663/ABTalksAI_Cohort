@@ -1,52 +1,49 @@
 Health Insurance Claims Process Guide
-Synthetic operational template for training and workflow testing
-Purpose. This guide describes a standard end-to-end process for receiving, validating, adjudicating, paying, denying, and appealing health insurance claims. It is suitable as a sample input for document extraction, workflow automation, and knowledge-base testing.
-1. Roles and Responsibilities
-2. Standard Claims Workflow
-Receive and log: Accept electronic or paper claims. Record date received, member ID, provider ID, service dates, billed amount, and claim type.
-Validate required data: Check for member identifier, patient relationship, diagnosis codes, procedure codes, place of service, units, provider identifiers, and itemized charges.
-Confirm eligibility: Verify that coverage was active on each date of service and that the patient was eligible under the contract.
-Check duplicates and coordination of benefits: Identify exact or near-duplicate claims and determine whether another payer is primary.
-Apply authorization and medical-policy rules: Confirm required referrals or prior authorizations. Route complex cases for clinical review.
-Price the claim: Apply contracted rates, fee schedules, bundling edits, deductible, copayment, coinsurance, and out-of-pocket accumulation.
-Adjudicate: Approve, partially approve, pend, or deny each service line. Record clear reason codes.
-Issue payment and explanation: Send payment to the correct payee and produce an explanation of benefits or remittance advice.
-Handle adjustments and appeals: Correct processing errors, recover overpayments where appropriate, and conduct timely appeal reviews.
-3. Intake Checklist
-Claim received date is captured.
-Member and patient identifiers match enrollment records.
-Provider name, tax identifier, and national provider identifier are present.
-Service dates are valid and not in the future.
-Diagnosis and procedure codes are syntactically valid.
-Billed charges and units are numeric and internally consistent.
-Attachments are present when required.
-Potential duplicate claims are flagged.
-4. Decision Outcomes
-5. Common Denial and Pend Reasons
-Eligibility: Coverage was inactive or the patient was not enrolled on the service date.
-Prior authorization: A required authorization was missing, expired, or did not match the service.
-Medical necessity: Submitted records did not support the service under the applicable policy.
-Coding: Diagnosis, procedure, modifier, units, or place-of-service information was invalid or inconsistent.
-Timely filing: The claim was received after the fictional 180-day filing limit.
-Coordination of benefits: Another insurer may be primary and additional information is needed.
-Duplicate: The same or substantially similar service was previously processed.
-6. Appeals Process
-1.  Submit a written appeal within 180 calendar days of the adverse determination.
-2.  Include the claim number, member name, service dates, disputed services, and the requested resolution.
-3.  Attach relevant medical records, authorization evidence, coding documentation, or proof of timely filing.
-4.  Acknowledge receipt within 5 business days.
-5.  Complete a standard appeal within 30 calendar days unless additional time is allowed by law or contract.
-6.  Send a written determination explaining the evidence reviewed, decision, and any further review rights.
-7. Quality-Control Rules
-Every denial must map to a documented rule and a member-friendly explanation.
-Clinical reviewers must be appropriately qualified for the issue reviewed.
-No employee may approve a payment to themselves or alter audit logs.
-All manual overrides require a reason and supervisor approval.
-Protected health information should be limited to the minimum necessary.
-Processing timeliness, overturn rate, rework rate, and financial accuracy should be monitored monthly.
-8. Example Service-Level Targets
-9. Sample Contact Block
-Northstar Health Plan - Claims Operations
-100 Example Avenue, Hartford, CT 06103
-Phone: 1-800-555-0188 | Fax: 1-800-555-0199
-Portal: https://example.invalid/claims
+Northstar Health Plan - schema-aligned synthetic workflow
+1. Purpose and data relationships
+This guide describes how a claims pipeline can receive a claim, validate its schema, join it to the plan reference table, assign a workflow status, and preserve an auditable result. It is designed for extraction, RAG, and workflow-testing exercises.
+Canonical join: claims.plan_id -> plans.plan_id
+2. Plan reference used during adjudication
+Important: the source labels are synthetic. The dataset happens to list a higher deductible for Gold PPO than for the HMO plans; the guide preserves those values rather than replacing them with typical market assumptions.
+3. Standard claims workflow
+1. Receive and log: Capture claim_id, member_id, plan_id, procedure, claim_amount, status, and date_filed.
+2. Validate schema: Confirm required fields are present; validate date format, numeric amount, unique claim_id, and permitted status values.
+3. Validate plan linkage: Join the claim to plans.csv by plan_id. Claims with an unknown plan_id should be rejected or pended for correction.
+4. Enrich claim context: Attach plan_name, annual_deductible, copay_pct, coverage_type, and network_tier to the processing record.
+5. Review duplicate risk: Check whether the same member, procedure, amount, and filing date already exist under another claim_id.
+6. Apply configured rules: Use only implemented benefit, authorization, network, and pricing rules. These rules are not supplied by the current CSV schema and must not be invented.
+7. Assign outcome: Use Approved, Denied, or Pending as represented in the supplied data. Store a reason field in a production schema even though claims.csv does not contain one.
+8. Produce audit output: Preserve original values, enriched plan values, processing timestamps, rule results, and any manual override details.
+4. Status definitions
+5. Validation controls
+- claim_id must be nonblank and unique.
+- member_id and plan_id must be nonblank.
+- plan_id must exist in plans.csv.
+- claim_amount must be numeric and nonnegative.
+- date_filed must parse as a valid date.
+- status must be one of Approved, Denied, or Pending unless the schema is deliberately expanded.
+- Do not infer coverage from procedure name or status alone.
+6. Supplied synthetic claim register
+The plan cost-share percentage is shown only as reference data. The file does not provide enough information to calculate member responsibility, because deductible accumulation, allowed amount, service rules, and payment details are absent.
+7. Plan-specific claim observations
+Gold PPO (P101)
+Linked claims: 2. Status counts - Pending: 1, Approved: 1. Procedures - X-ray, Surgery.
+Silver HMO (P102)
+Linked claims: 2. Status counts - Denied: 1, Approved: 1. Procedures - X-ray, Surgery.
+Bronze HMO (P103)
+Linked claims: 1. Status counts - Pending: 1. Procedures - X-ray.
+8. Recommended production schema extensions
+9. Data dictionary
+plans.plan_id: Unique plan identifier and join key.
+plans.plan_name: Human-readable plan name.
+plans.monthly_premium: Monthly premium amount.
+plans.annual_deductible: Annual deductible amount.
+plans.copay_pct: Percentage field used as the plan cost-share reference.
+plans.coverage_type: Plan type category: PPO or HMO in this dataset.
+plans.network_tier: Synthetic tier label: Gold, Silver, or Bronze.
+claims.claim_id: Unique synthetic claim identifier.
+claims.member_id: Synthetic member identifier.
+claims.procedure: Procedure label supplied for the claim.
+claims.claim_amount: Claim charge amount supplied in the record.
+claims.status: Approved, Denied, or Pending.
+claims.date_filed: Date the claim was filed.
