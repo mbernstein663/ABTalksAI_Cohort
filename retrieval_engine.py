@@ -52,9 +52,8 @@ def define_function(question):
 
 
 
-def sql_lookup(question, structure):
-    if structure not in ("both", "structured"):
-        return None
+def sql_lookup(question):
+
     
     user = f"""
     Convert the question into exactly one read-only SQLite SELECT statement for structured RAG retrieval.
@@ -93,9 +92,7 @@ def sql_lookup(question, structure):
     return rows
 
 
-def vector_lookup(question, structure): 
-    if structure not in ("unstructured", "both"):
-        return None
+def vector_lookup(question): 
 
     emb_query = model.encode(question)
     results = collection.query(
@@ -132,13 +129,20 @@ def merge_context(rows, results):
 # call all the functions:
 def retrieve(question):
     structure = define_function(question)
-    rows = sql_lookup(question, structure) or []
-    results = vector_lookup(question, structure) or []
+
+    rows = []
+    results = {}
+
+    if structure in ("structured", "both"):
+        rows = sql_lookup(question) or []
+
+    if structure in ("unstructured", "both"):
+        results = vector_lookup(question) or {}
+
     model_context = merge_context(rows, results)
 
     print("RAW SQL ROWS:", rows)
     print("RAW VECTOR RESULTS:", results)
-
 
     return model_context, structure
 
