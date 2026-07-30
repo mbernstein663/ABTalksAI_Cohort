@@ -164,7 +164,11 @@ def retrieve(question):
 
 def generate_answer(question, context):
     print("Local chatbot — type 'quit' to exit")
-    system_prompt = f"Answer using ONLY the context below. If the answer isn't in the context, say you don't know and suggest the member contact support. This is not medical advice. Context: {context} Question: {question}"
+    system_prompt = f"""Answer using ONLY the context below. If the answer isn't in the context, say you don't know and suggest the member contact support. This is not medical advice.
+
+    Context: {context}
+
+    Question: {question}"""
 
     # 'stream=True' activates streaming mode
     reply = ollama.chat(model='qwen3:8b', messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": question}], stream=True)
@@ -183,13 +187,17 @@ def generate_answer(question, context):
 
 output = root / "rag_qa_results.md"
 
-with output.open("a", encoding="utf-8") as file:
-    while (question := input("\nYou: ").strip()).lower() != "quit":
-        context, structure = retrieve(question)
-        answer = generate_answer(question, context)
 
-        # print(f"\nAI: {answer}")
+def retrieve_and_answer(question):
+    context, structure = retrieve(question)
+    answer = generate_answer(question, context)
 
+    with output.open("a", encoding="utf-8") as file:
         file.write(f"## {question}\n\n")
         file.write(f"{answer}\n\n---\n\n")
-        file.flush()
+
+    return answer
+
+
+while (question := input("\nYou: ").strip()).lower() != "quit":
+    retrieve_and_answer(question)

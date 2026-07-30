@@ -98,3 +98,15 @@ If the claim was denied, the context provided does not include specific details 
 
 ---
 
+## Is maternity care covered on the Bronze HMO plan?
+
+The provided context does not specify whether maternity care is covered under the Bronze HMO plan. Please contact support for assistance with coverage details. This is not medical advice.
+
+---
+
+## Do I need prior authorization for surgery?
+
+The provided context does not specify whether prior authorization is required for surgery. Please contact your insurance provider's support team for details specific to your plan.
+
+---
+
