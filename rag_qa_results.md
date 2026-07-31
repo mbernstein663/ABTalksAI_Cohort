@@ -110,3 +110,70 @@ The provided context does not specify whether prior authorization is required fo
 
 ---
 
+## What is the claim status for C1003, and how do I appeal if it was denied?
+
+The claim status for **C1003** is **Denied**, as indicated in the structured database result.  
+
+To appeal a denied claim, the context does not provide specific instructions or details about appeal procedures, denial reasons, or required steps (e.g., submitting additional documentation, contacting the insurer, or appealing through a formal process). The retrieved documents note that fields like denial reasons, allowed amounts, and payment details are not included in the supplied schema.  
+
+**Recommendation:** Contact your insurance provider directly using the plan details (e.g., plan_id or plan_name from the plans table) to obtain guidance on appealing the denial. Always consult a medical professional or insurance specialist if you need clarification on next steps.
+
+---
+
+## What is the claim status for C1003, and how do I appeal if it was denied?
+
+The claim status for **C1003** is **Denied**, as indicated in the structured database result.  
+
+However, the provided context does not include specific details about the reason for denial, allowed amounts, or steps for appealing. To proceed with an appeal, you would typically need to:  
+1. Contact your healthcare provider or insurance company directly for guidance on the appeal process.  
+2. Request the denial reason and any supporting documentation.  
+3. Follow their instructions for submitting an appeal, which may include additional forms or evidence.  
+
+For medical or insurance-related questions not addressed here, please consult a licensed healthcare provider or your insurance plan’s customer service. Let me know if you need further assistance! 😊
+
+---
+
+## What is the claim status for C1003, and how do I appeal if it was denied?
+
+Claim **C1003** is marked as **Denied** in our structured database.  
+Denied claims are handled by the Marketplace Call Center, which you can reach at 1-800-318-2596 (TTY: 1-855-889-4325). A representative will assist you with the appeals process. For more detailed steps, visit the "Learn about the appeals process" section of our website.  
+**Note:** This is not specialized medical advice. Always consult your insurer for plan-specific procedures. If you need further assistance, contact support.
+
+---
+
+## What is the claim status for C1003, and how do I appeal if it was denied?
+
+The claim status for **C1003** is **Denied**.  
+
+If the claim was denied, the context does not provide specific details about appeal processes, denial reasons, or next steps. You should contact your insurance provider’s support team directly for guidance on appealing the decision. They can provide plan-specific instructions and requirements.  
+
+**Note:** This response is based on the provided context. Always consult official plan documentation or customer support for accurate appeal procedures.
+
+---
+
+## What is the claim status for C1003, and how do I appeal if it was denied?
+
+Claim **C1003** is marked as **Denied** in our structured database.  
+Denied claims are handled by the Marketplace Call Center at 1-800-318-2596 (TTY: 1-855-889-4325). A representative will assist with the appeals process. For detailed steps, visit the "Learn about the appeals process" section of our website.  
+**Note:** This is not specialized medical advice. Always consult your insurer for plan-specific procedures.
+
+---
+
+## Is maternity care covered on the Bronze HMO plan?
+
+The context provided does not specify whether maternity care is covered under the Bronze HMO plan. For plan-specific details, please contact support.
+
+---
+
+## What is the claim status for C1003?
+
+Claim **C1003** is marked as **Denied** in our structured database. Let me know if you need further assistance! 😊
+
+---
+
+## What is the annual deductible for Silver HMO?
+
+The annual deductible for the Silver HMO plan is **$1,500**. Let me know if you need further assistance! 😊
+
+---
+
