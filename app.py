@@ -1,0 +1,137 @@
+"""
+Streamlit Frontend Development: Simple
+
+Streamlt is fast and python-only while React is slower frontend engineering
+Streamlit it aslo better for demos and model testing with moderate UI customiztion. Solid state handling and production featurs.
+
+
+"""
+
+import streamlit as st
+import requests
+
+
+import sqlite3
+import secrets
+from pathlib import Path
+
+
+db_path = Path(r"C:\Users\micro\Documents\ABTalksAI-Cohort\data\coverage.db")
+
+with sqlite3.connect(db_path) as conn:
+    plans = conn.execute(
+        "SELECT plan_id, plan_name FROM plans"
+    ).fetchall()
+
+
+
+
+
+url = "http://127.0.0.1:8000/chat"
+
+st.title("RAG Coverage Chatbot")
+
+if "session_id" not in st.session_state:
+    # st.session_state["session_id"] = str(uuid.uuid4())
+    st.session_state["session_id"] = 1
+
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {
+            "role": "assistant",
+            "content": "Hello. I am here to provide informational assistant with claims, plans, or healthcare coverage. Ask away!"
+        }
+    ]
+
+if "member_id" not in st.session_state:
+    st.session_state.member_id = 101
+
+# render the full conversation thread
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.write(message["content"])
+
+# accept a new user message
+if prompt := st.chat_input("What can I help with?"):
+    user_message = {
+        "role": "user",
+        "content": prompt,
+    }
+
+    st.session_state.messages.append(user_message)
+
+    with st.chat_message("user"):
+        st.write(prompt)
+
+
+
+    
+    payload = {
+        "session_id": st.session_state["session_id"],
+        "member_id": st.session_state["member_id"],
+        "message": prompt
+    }
+
+    try:
+        response = requests.post(url, json=payload)
+
+        if response.status_code == 200:
+            response_data = response.json()
+            answer = response_data.get("answer", "No answer returned.")
+
+            st.session_state.messages.append(
+                {
+                    "role": "assistant",
+                    "content": answer
+                }
+            )
+
+            with st.chat_message("assistant"):
+                st.write(answer)
+
+        else:
+            st.error(
+                f"Error {response.status_code}: "
+                f"{response.json().get('detail')}"
+            )
+
+    except requests.exceptions.ConnectionError:
+        st.error(
+            "Could not connect to the FastAPI server. "
+            "Please check that it is running."
+        )
+
+
+"""
+create sidebar for plan "conversation settings" from SQLite table, then
+create a session reset button that starts session from scratch
+
+
+"""
+
+
+with st.sidebar:
+    st.header("Conversation Settings")
+
+    selected_plan = st.selectbox(
+        "Select a plan",
+        options=plans,
+        format_func=lambda plan: f"{plan[1]} ({plan[0]})"
+    )
+
+    selected_plan_id = selected_plan[0]
+
+    if st.button("New conversation"):
+        st.session_state.session_id = secrets.randbelow(1_000_000_000) + 1
+
+        st.session_state.messages = [
+            {
+                "role": "assistant",
+                "content": (
+                    "Hello. I can provide informational assistance with "
+                    "claims, plans, or healthcare coverage. Ask away!"
+                )
+            }
+        ]
+
+        st.rerun()
