@@ -25,7 +25,10 @@ output = root / "tool_call_log.md"
 dfp = pd.read_csv(dpath / "plans.csv")
 dfc = pd.read_csv(dpath / "claims.csv")
 
-conn = sqlite3.connect(dpath / "coverage.db")
+conn = sqlite3.connect(
+    dpath / "coverage.db",
+    check_same_thread=False
+)
 dfp.to_sql("plans", conn, if_exists="replace", index=False)
 dfc.to_sql("claims", conn, if_exists="replace", index=False)
 conn.commit()
@@ -484,6 +487,9 @@ def retrieve_and_answer(question):
     answer = generate_answer(question, context)
     return answer
 
+if __name__ == "__main__":
+    while (question := input("\nYou: ").strip()).lower() != "quit":
+        retrieve_and_answer(question)
 
-while (question := input("\nYou: ").strip()).lower() != "quit":
-    retrieve_and_answer(question)
+
+

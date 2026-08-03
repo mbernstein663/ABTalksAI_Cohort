@@ -177,3 +177,9 @@ The annual deductible for the Silver HMO plan is **$1,500**. Let me know if you 
 
 ---
 
+## What is the claim status for C1003?
+
+The claim status for C1003 is **Denied**.
+
+---
+
