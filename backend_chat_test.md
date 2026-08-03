@@ -2,7 +2,7 @@
 
 We have our working uvicorn server set up with successful "health," "chat," and "history" operations (GET, POST, GET, respectively.). Here are the results logs, everything seems to check out okay and be working well:
 
-## Chat Test:
+## Chat Test
 
 **Successful Responses**:
 
@@ -15,7 +15,7 @@ A: The claim status for C1003 is **Denied**. If you need to appeal, contact your
 Q: "Is maternity care covered on the Bronze HMO plan?"
 A: The context does not specify whether maternity care is covered under the Bronze HMO plan. For detailed coverage information, please contact support.
 
-```
+```{Powershell}
 PS C:\Users\micro> $body = @{
 >>     session_id = 1
 >>     member_id  = 101
@@ -87,9 +87,9 @@ history    : {@{role=user; message=What is the monthly premium for Gold PPO?}, @
 
 ```
 
-## History test:
+## History test
 
-```
+```{Powershell}
 PS C:\Users\micro> Invoke-RestMethod `
 >>     -Uri "http://127.0.0.1:8000/history/1" `
 >>     -Method Get |
@@ -124,4 +124,5 @@ PS C:\Users\micro> Invoke-RestMethod `
                     }
                 ]
 }
+
 ```
