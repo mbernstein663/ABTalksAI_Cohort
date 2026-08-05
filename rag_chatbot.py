@@ -157,11 +157,11 @@ def retrieve(question):
         results = vector_lookup(question) or {}
 
     model_context = merge_context(rows, results)
-
+    chunk_ids = results.get("ids", [[]])[0] if results else []
     print("RAW SQL ROWS:", rows)
     # print("RAW VECTOR RESULTS:", results)
 
-    return model_context, structure
+    return model_context, structure, chunk_ids
 
 
 

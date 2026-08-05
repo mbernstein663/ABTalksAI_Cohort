@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from rag_chatbot import retrieve
+from tool_calling_chatbot import retrieve
 from tool_calling_chatbot import generate_answer
 
 from fastapi import Request
@@ -32,6 +32,8 @@ class ChatResponse(BaseModel):
     member_id: int
     answer: str
     structure: str
+    chunk_ids: List[str]
+    tool_result: dict | None = None
     history: List[SessionTurn]
 
 
@@ -103,7 +105,7 @@ def chat(request: ChatRequest):
     )
 
     try:
-        context, structure = retrieve(request.message)
+        context, structure, chunk_ids, tool_result = retrieve(request.message)
 
         def stream():
             assistant_turn = SessionTurn(
@@ -120,6 +122,8 @@ def chat(request: ChatRequest):
                     member_id=session.member_id,
                     answer=token,
                     structure=structure,
+                    chunk_ids = chunk_ids,
+                    tool_result=tool_result,
                     history=session.history,
                 )
 

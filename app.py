@@ -14,6 +14,9 @@ import json
 import sqlite3
 import secrets
 from pathlib import Path
+from response_cards import render_response_extras
+
+
 
 
 db_path = Path(r"C:\Users\micro\Documents\ABTalksAI-Cohort\data\coverage.db")
@@ -51,6 +54,11 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.write(message["content"])
 
+        render_response_extras(
+            chunk_ids=message.get("chunk_ids"),
+            tool_result=message.get("tool_result")
+        )
+
 # accept a new user message
 if prompt := st.chat_input("What can I help with?"):
     user_message = {
@@ -85,14 +93,24 @@ if prompt := st.chat_input("What can I help with?"):
                 url,
                 json=payload,
                 stream=True,
-                timeout=(5, 30)
+                timeout=(5, 120)
             )
 
-            response.raise_for_status()
+            if response.status_code != 200:
+                try:
+                    detail = response.json().get("detail", response.text)
+                except ValueError:
+                    detail = response.text
+
+                st.error(f"Backend error: {detail}")
+                st.stop()
 
             if response.status_code == 200:
                 full_answer = ""
                 first_token = True
+
+                tool_result = None
+                answer_chunk_ids = []
 
                 for line in response.iter_lines(
                     chunk_size=1,
@@ -107,6 +125,11 @@ if prompt := st.chat_input("What can I help with?"):
 
                     token = response_data.get("answer", "")
 
+                    received_chunk_ids = response_data.get("chunk_ids", [])
+
+                    if received_chunk_ids:
+                        answer_chunk_ids = received_chunk_ids
+
                     if first_token:
                         status.update(
                             label="Response generated",
@@ -115,13 +138,22 @@ if prompt := st.chat_input("What can I help with?"):
                         status.empty()
                         first_token = False
 
+                    tool_result = response_data.get("tool_result")
+
                     full_answer += token
                     placeholder.markdown(full_answer)
+
+                render_response_extras(
+                    chunk_ids=answer_chunk_ids,
+                    tool_result=tool_result
+)
 
                 st.session_state.messages.append(
                     {
                         "role": "assistant",
-                        "content": full_answer
+                        "content": full_answer,
+                        "chunk_ids": answer_chunk_ids,
+                        "tool_result": tool_result
                     }
                 )
 
@@ -159,13 +191,6 @@ if prompt := st.chat_input("What can I help with?"):
             "Please check that it is running."
         )
 
-
-"""
-create sidebar for plan "conversation settings" from SQLite table, then
-create a session reset button that starts session from scratch
-
-
-"""
 
 
 with st.sidebar:

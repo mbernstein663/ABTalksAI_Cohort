@@ -46,4 +46,33 @@ STRUCTURE: structured
 GENERATED SQL: "SELECT claim_id, status FROM claims WHERE claim_id = 'C1003';"
 RAW STRUCTURED ROWS: [{'claim_id': 'C1003', 'status': 'Denied'}]
 Local chatbot — type 'quit' to exit
-The context provided does not include specific instructions for appealing a denied claim. Please contact customer support for guidance on the appeal process.
+The context provided does not include specific instructions for appealing a denied claim. Please contact customer support for guidance on the appeal process.## What is the claim status for C1003, and how do I appeal if it was denied?
+
+function=Function(name='get_claim_status', arguments={'claim_id': 'C1003'})
+
+---
+
+## Tell me about the Gold PPO plan.
+
+function=Function(name='get_plan_details', arguments={'plan_id': 'P101'})
+
+---
+
+## What is the claim status for C1003?
+
+function=Function(name='get_claim_status', arguments={'claim_id': 'C1003'})
+
+---
+
+## What is the claim status for C1003?
+
+function=Function(name='get_claim_status', arguments={'claim_id': 'C1003'})
+
+---
+
+## Tell me information about the Gold PPO plan.
+
+function=Function(name='get_plan_details', arguments={'plan_id': 'Gold PPO'})
+
+---
+

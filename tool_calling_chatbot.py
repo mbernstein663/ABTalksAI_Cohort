@@ -167,23 +167,45 @@ def get_claim_status(claim_id):
     }
 
 def get_plan_details(plan_id):
-    prompt = f"SELECT plan_name, monthly_premium, annual_deductible, copay_pct, coverage_type, network_tier FROM plans WHERE plan_id = '{plan_id}'"
+    normalized_plan = plan_id.replace(" ", "").lower()
+
+    prompt = """
+        SELECT
+            plan_id,
+            plan_name,
+            monthly_premium,
+            annual_deductible,
+            copay_pct,
+            coverage_type,
+            network_tier
+        FROM plans
+        WHERE LOWER(plan_id) = ?
+           OR REPLACE(LOWER(plan_name), ' ', '') = ?
+    """
 
     cursor = conn.cursor()
-    cursor.execute(prompt)
-    # columns = [column[0] for column in cursor.description]
+    cursor.execute(
+        prompt,
+        (plan_id.lower(), normalized_plan)
+    )
+
     info = cursor.fetchone()
 
+    if info is None:
+        raise ValueError(
+            f"No plan found for identifier: {plan_id}"
+        )
+
     return {
-        "plan_id": plan_id,
-        "plan_name": info[0],
-        "monthly_premium": info[1],
-        "annual_deductible": info[2],
-        "copay_pct": info[3],
-        "coverage_type": info[4],
-        "network_tier": info[5]
+        "plan_id": info[0],
+        "plan_name": info[1],
+        "monthly_premium": info[2],
+        "annual_deductible": info[3],
+        "copay_pct": info[4],
+        "coverage_type": info[5],
+        "network_tier": info[6]
     }
-    
+
 def estimate_out_of_pocket_cost(procedure, plan_id):
     prompt = f"SELECT claims.claim_amount * plans.copay_pct / 100.0 AS estimated_out_of_pocket FROM claims JOIN plans ON claims.plan_id = plans.plan_id WHERE claims.plan_id = '{plan_id}' AND claims.procedure = '{procedure}'"
 
@@ -279,7 +301,7 @@ def define_function(question):
     ]
 
     unstructured_keywords = [
-        "cover", "coverage", "procedure", "prior", "detail", "authorization"
+        "cover", "coverage", "procedure", "prior", "detail", "authorization",
         "appeal", "in-network", "out-of-network", "exclud", "eligible"
     ]
 
@@ -429,6 +451,8 @@ def retrieve(question):
     print("STRUCTURE:", structure)
     rows = []
     results = {}
+    tool_result = None
+    chunk_ids = []
 
     if structure in ("structured", "both"):
         tool_result = tool_call(question)
@@ -442,11 +466,13 @@ def retrieve(question):
         results = vector_lookup(question) or {}
 
     model_context = merge_context(rows, results)
+    chunk_ids = results.get("ids", [[]])[0] if results else []
 
-    print("RAW STRUCTURED ROWS:", rows)
+
+    print("CHUNK IDS:", chunk_ids)
     # print("RAW VECTOR RESULTS:", results)
 
-    return model_context, structure
+    return model_context, structure, chunk_ids, tool_result
 
 
 
