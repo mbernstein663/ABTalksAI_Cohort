@@ -10,6 +10,10 @@ from tool_calling_chatbot import generate_answer
 
 from fastapi import Request
 import time
+from typing import Dict, List, Literal
+
+from fastapi.responses import StreamingResponse
+
 
 
 class ChatRequest(BaseModel):
@@ -90,7 +94,7 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/chat", response_model=ChatResponse)
+@app.post("/chat")
 def chat(request: ChatRequest):
     session = get_session(request.session_id, request.member_id)
 
@@ -100,7 +104,31 @@ def chat(request: ChatRequest):
 
     try:
         context, structure = retrieve(request.message)
-        answer = generate_answer(request.message, context)
+
+        def stream():
+            assistant_turn = SessionTurn(
+                role="assistant",
+                message=""
+            )
+            session.history.append(assistant_turn)
+
+            for token in generate_answer(request.message, context):
+                assistant_turn.message += token
+
+                response = ChatResponse(
+                    session_id=session.session_id,
+                    member_id=session.member_id,
+                    answer=token,
+                    structure=structure,
+                    history=session.history,
+                )
+
+                yield f"data: {response.model_dump_json()}\n\n"
+
+        return StreamingResponse(
+            stream(),
+            media_type="text/event-stream"
+        )
 
     except Exception as error:
         print("Chat endpoint error:", error)
@@ -109,18 +137,6 @@ def chat(request: ChatRequest):
             status_code=500,
             detail=str(error)
         )
-
-    session.history.append(
-        SessionTurn(role="assistant", message=answer)
-    )
-
-    return ChatResponse(
-        session_id=session.session_id,
-        member_id=session.member_id,
-        answer=answer,
-        structure=structure,
-        history=session.history,
-    )
 
 
 

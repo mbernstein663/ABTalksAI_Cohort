@@ -10,7 +10,7 @@ Streamlit it aslo better for demos and model testing with moderate UI customizti
 import streamlit as st
 import requests
 
-
+import json
 import sqlite3
 import secrets
 from pathlib import Path
@@ -73,27 +73,85 @@ if prompt := st.chat_input("What can I help with?"):
     }
 
     try:
-        response = requests.post(url, json=payload)
-
-        if response.status_code == 200:
-            response_data = response.json()
-            answer = response_data.get("answer", "No answer returned.")
-
-            st.session_state.messages.append(
-                {
-                    "role": "assistant",
-                    "content": answer
-                }
+        with st.chat_message("assistant"):
+            status = st.status(
+                "Generating response...",
+                expanded=False
             )
 
-            with st.chat_message("assistant"):
-                st.write(answer)
+            placeholder = st.empty()
 
-        else:
-            st.error(
-                f"Error {response.status_code}: "
-                f"{response.json().get('detail')}"
+            response = requests.post(
+                url,
+                json=payload,
+                stream=True,
+                timeout=(5, 30)
             )
+
+            response.raise_for_status()
+
+            if response.status_code == 200:
+                full_answer = ""
+                first_token = True
+
+                for line in response.iter_lines(
+                    chunk_size=1,
+                    decode_unicode=True
+                ):
+                    if not line or not line.startswith("data: "):
+                        continue
+
+                    response_data = json.loads(
+                        line.removeprefix("data: ")
+                    )
+
+                    token = response_data.get("answer", "")
+
+                    if first_token:
+                        status.update(
+                            label="Response generated",
+                            state="complete"
+                        )
+                        status.empty()
+                        first_token = False
+
+                    full_answer += token
+                    placeholder.markdown(full_answer)
+
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": full_answer
+                    }
+                )
+
+            else:
+                status.update(
+                    label="Response failed",
+                    state="error"
+                )
+
+                st.error(
+                    f"Error {response.status_code}: "
+                    f"{response.json().get('detail')}"
+                )
+
+    except requests.exceptions.Timeout:
+        status.empty()
+        st.error(
+            "The response timed out. Please try again."
+        )
+
+    except (
+        requests.exceptions.ConnectionError,
+        requests.exceptions.ChunkedEncodingError
+    ):
+        status.empty()
+
+        st.error(
+            "The connection was interrupted while the response was streaming. "
+            "Please try again."
+        )
 
     except requests.exceptions.ConnectionError:
         st.error(
