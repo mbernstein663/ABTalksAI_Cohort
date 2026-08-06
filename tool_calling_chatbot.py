@@ -6,6 +6,7 @@ import pandas as pd
 from sentence_transformers import SentenceTransformer
 import chromadb
 from pathlib import Path
+import tiktoken
 
 
 openai.OpenAI(
@@ -138,6 +139,166 @@ tools = [
         },
     },
 ]
+
+
+
+
+# History loader from SQL
+
+import re
+
+def summarize_history(session_id, token_limit=2000):
+    with sqlite3.connect(dpath / "coverage.db") as conn:
+        rows = conn.execute(
+            """
+            SELECT rowid, role, content
+            FROM conversations
+            WHERE session_id = ?
+            ORDER BY timestamp ASC, rowid ASC
+            """,
+            (session_id,)
+        ).fetchall()
+
+    history_text = "\n".join(
+        f"{role}: {content}"
+        for _, role, content in rows
+    )
+
+    before_tokens = count_tokens(history_text)
+
+    print(
+        f"HISTORY TOKENS | session={session_id} "
+        f"| before={before_tokens}"
+    )
+
+    if before_tokens <= token_limit:
+        print("SUMMARIZATION | triggered=False")
+        return
+
+    oldest_half = rows[:len(rows) // 2]
+
+    text_to_summarize = "\n".join(
+        f"{role}: {content}"
+        for _, role, content in oldest_half
+    )
+
+    reply = ollama.chat(
+        model="qwen3:8b",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "Summarize this conversation concisely. "
+                    "Preserve important facts and identifiers."
+                )
+            },
+            {
+                "role": "user",
+                "content": text_to_summarize
+            }
+        ]
+    )
+
+    summary = reply["message"]["content"]
+    row_ids = [row[0] for row in oldest_half]
+    placeholders = ",".join("?" for _ in row_ids)
+
+    with sqlite3.connect(dpath / "coverage.db") as conn:
+        conn.execute(
+            f"""
+            DELETE FROM conversations
+            WHERE rowid IN ({placeholders})
+            """,
+            row_ids
+        )
+
+        conn.execute(
+            """
+            INSERT INTO conversations (
+                session_id,
+                role,
+                content,
+                timestamp
+            )
+            VALUES (?, 'summary', ?, CURRENT_TIMESTAMP)
+            """,
+            (session_id, summary)
+        )
+
+        after_rows = conn.execute(
+            """
+            SELECT role, content
+            FROM conversations
+            WHERE session_id = ?
+            """,
+            (session_id,)
+        ).fetchall()
+
+        conn.commit()
+
+    after_text = "\n".join(
+        f"{role}: {content}"
+        for role, content in after_rows
+    )
+
+    print(
+        f"SUMMARIZATION | triggered=True "
+        f"| after={count_tokens(after_text)}"
+    )
+
+
+def load_history(session_id, limit=10):
+    with sqlite3.connect(dpath / "coverage.db") as conn:
+        summary = conn.execute(
+            """
+            SELECT content
+            FROM conversations
+            WHERE session_id = ?
+              AND role = 'summary'
+            ORDER BY timestamp DESC, rowid DESC
+            LIMIT 1
+            """,
+            (session_id,)
+        ).fetchone()
+
+        rows = conn.execute(
+            """
+            SELECT role, content
+            FROM conversations
+            WHERE session_id = ?
+              AND role != 'summary'
+            ORDER BY timestamp DESC, rowid DESC
+            LIMIT ?
+            """,
+            (session_id, limit)
+        ).fetchall()
+
+    rows.reverse()
+
+    history = []
+
+    if summary:
+        history.append({
+            "role": "system",
+            "content": f"Earlier conversation summary: {summary[0]}"
+        })
+
+    history.extend(
+        {"role": role, "content": content}
+        for role, content in rows
+    )
+
+    return history
+
+"""
+TOOL CALL FUNCTIONS
+
+1. check_coverage: checks to see if a procedure exists for a medical plan (SQL)
+2. get_claim_status: checks the status for a customer claim
+3. get_plan_details: checks all detailed information about a plan from plans.csv
+4. estimate_out_of_pocket_cost: estimates total pricing from a procedure based on the listed coverage
+
+"""
 
 def check_coverage(plan_id, procedure):
     prompt = f"SELECT CASE WHEN COUNT(*) > 0 THEN 'True' ELSE 'False' END AS MatchExists FROM claims WHERE plan_id = '{plan_id}' AND procedure = '{procedure}'"
@@ -286,7 +447,14 @@ Questions:
 
 
 
+"""
+FUNCTION DEFINITIONS
 
+TOOL CALLS:
+1. Defines whether question is classified as structured or unstructured to aid in retrieval
+2. SQL lookup: NON tool call that prompts off-the-cuff SQL generation for structured outputs
+
+"""
 
 
 
@@ -302,7 +470,7 @@ def define_function(question):
 
     unstructured_keywords = [
         "cover", "coverage", "procedure", "prior", "detail", "authorization",
-        "appeal", "in-network", "out-of-network", "exclud", "eligible"
+        "appeal", "in-network", "out-of-network", "exclud", "eligible", "how"
     ]
 
     structured_match = any(word in question for word in structured_keywords)
@@ -331,6 +499,7 @@ def sql_lookup(question):
     Do not use markdown, explanations, or labels.
     DO NOT include code fences like '```sql ... ```'
     Never use INSERT, UPDATE, DELETE, DROP, ALTER, or CREATE.
+    DO NOT try to create statements with information that is not explicitly provided.
 
     Always include identifying columns used in the question or WHERE clause.
     For example, return claim_id with claim_amount and plan_name with monthly_premium.
@@ -475,6 +644,10 @@ def retrieve(question):
     return model_context, structure, chunk_ids, tool_result
 
 
+
+def count_tokens(text):
+    encoding = tiktoken.get_encoding("cl100k_base")
+    return len(encoding.encode(text))
 
 def generate_answer(question, context):
     print("Local chatbot — type 'quit' to exit")

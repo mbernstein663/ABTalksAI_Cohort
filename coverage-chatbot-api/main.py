@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from tool_calling_chatbot import retrieve
-from tool_calling_chatbot import generate_answer
+from tool_calling_chatbot import generate_answer, load_history, summarize_history
 
 from fastapi import Request
 import time
@@ -14,7 +14,41 @@ from typing import Dict, List, Literal
 
 from fastapi.responses import StreamingResponse
 
+import sqlite3
+from pathlib import Path
+from datetime import datetime, timezone
 
+db_path = Path(
+    r"C:\Users\micro\Documents\ABTalksAI-Cohort\data\coverage.db"
+)
+
+# SQL FUNCTION
+
+
+def save_message(session_id, role, content):
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            """
+            INSERT INTO conversations (
+                session_id,
+                role,
+                content,
+                timestamp
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                session_id,
+                role,
+                content,
+                datetime.now(timezone.utc).isoformat()
+            )
+        )
+        conn.commit()
+
+
+
+# PYDANTIC CLASSES
 
 class ChatRequest(BaseModel):
     session_id: int
@@ -60,7 +94,7 @@ def get_session(session_id: int, member_id: int) -> SessionState:
 
 app = FastAPI()
 
-# Add
+# Add middelware for timeout + error logging
 
 @app.middleware("http")
 async def log_request_time(request: Request, call_next):
@@ -104,8 +138,34 @@ def chat(request: ChatRequest):
         SessionTurn(role="user", message=request.message)
     )
 
+    save_message(
+        session_id=session.session_id,
+        role="user",
+        content=request.message
+    )
+
     try:
-        context, structure, chunk_ids, tool_result = retrieve(request.message)
+
+ 
+        summarize_history(
+            request.session_id,
+            token_limit=2000
+        )
+
+        history = load_history(
+            request.session_id,
+            limit=10
+        )
+
+        context, structure, chunk_ids, tool_result = retrieve(
+            request.message
+        )
+
+        context += f"""
+        Conversation history:
+        {history}
+
+        """
 
         def stream():
             assistant_turn = SessionTurn(
@@ -128,6 +188,13 @@ def chat(request: ChatRequest):
                 )
 
                 yield f"data: {response.model_dump_json()}\n\n"
+            
+            save_message(
+                session_id=request.session_id,
+                role="assistant",
+                content=assistant_turn.message
+            )
+
 
         return StreamingResponse(
             stream(),

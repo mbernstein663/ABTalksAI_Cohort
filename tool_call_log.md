@@ -76,3 +76,33 @@ function=Function(name='get_plan_details', arguments={'plan_id': 'Gold PPO'})
 
 ---
 
+## Is maternity care covered on the Bronze HMO plan?
+
+function=Function(name='check_coverage', arguments={'plan_id': 'P101', 'procedure': 'maternity care'})
+
+---
+
+## What is the claim status for C1003?
+
+function=Function(name='get_claim_status', arguments={'claim_id': 'C1003'})
+
+---
+
+## What is the claim status for C1003, and how do I appeal if it was denied?
+
+function=Function(name='get_claim_status', arguments={'claim_id': 'C1003'})
+
+---
+
+## What is the claim status for C1002, and how do I appeal if it was denied?
+
+function=Function(name='get_claim_status', arguments={'claim_id': 'C1002'})
+
+---
+
+## What is the claim status for C1001, and how do I appeal if it was denied?
+
+function=Function(name='get_claim_status', arguments={'claim_id': 'C1001'})
+
+---
+
