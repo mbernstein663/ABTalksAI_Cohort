@@ -5,8 +5,8 @@ from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from tool_calling_chatbot import retrieve
-from tool_calling_chatbot import generate_answer, load_history, summarize_history
+from langchain_agent import retrieve
+from langchain_agent import generate_answer, load_history, summarize_history
 
 from fastapi import Request
 import time

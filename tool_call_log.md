@@ -106,3 +106,39 @@ function=Function(name='get_claim_status', arguments={'claim_id': 'C1001'})
 
 ---
 
+## Is surgery covered by the plan with id P101?
+
+function=Function(name='check_coverage', arguments={'plan_id': 'P101', 'procedure': 'Surgery'})
+
+---
+
+## Are X-rays covered by the plan with id P102?
+
+function=Function(name='check_coverage', arguments={'plan_id': 'P102', 'procedure': 'X-rays'})
+
+---
+
+## Is surgery covered by the plan with id P101?
+
+function=Function(name='check_coverage', arguments={'plan_id': 'P101', 'procedure': 'Surgery'})
+
+---
+
+## Are X-rays covered by the plan with id P102?
+
+function=Function(name='check_coverage', arguments={'plan_id': 'P102', 'procedure': 'X-rays'})
+
+---
+
+## What is my estimated out of pocket cost for a surgery under plan with id P103?
+
+function=Function(name='estimate_out_of_pocket_cost', arguments={'plan_id': 'P103', 'procedure': 'surgery'})
+
+---
+
+## Is surgery covered by the plan with id P101?
+
+function=Function(name='check_coverage', arguments={'plan_id': 'P101', 'procedure': 'Surgery'})
+
+---
+
