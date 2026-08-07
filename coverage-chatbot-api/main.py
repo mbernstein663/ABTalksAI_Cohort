@@ -5,8 +5,8 @@ from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from langchain_agent import retrieve
 from langchain_agent import generate_answer, load_history, summarize_history
+from multi_agent import graph
 
 from fastapi import Request
 import time
@@ -157,9 +157,18 @@ def chat(request: ChatRequest):
             limit=10
         )
 
-        context, structure, chunk_ids, tool_result = retrieve(
-            request.message
-        )
+        result = graph.invoke({
+            "question": request.message
+        })
+
+        context = result["context"]
+        structure = result["structure"]
+        chunk_ids = result["chunk_ids"]
+        tool_result = result["tool_result"]
+        instructions = result["instructions"]
+
+        print("ROUTE:", result["route"])
+
 
         context += f"""
         Conversation history:
@@ -174,7 +183,7 @@ def chat(request: ChatRequest):
             )
             session.history.append(assistant_turn)
 
-            for token in generate_answer(request.message, context):
+            for token in generate_answer(request.message, context, instructions):
                 assistant_turn.message += token
 
                 response = ChatResponse(

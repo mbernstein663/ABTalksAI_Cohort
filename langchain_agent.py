@@ -650,9 +650,12 @@ def count_tokens(text):
     encoding = tiktoken.get_encoding("cl100k_base")
     return len(encoding.encode(text))
 
-def generate_answer(question, context):
+def generate_answer(question, context, instructions=""):
     print("Local chatbot — type 'quit' to exit")
-    system_prompt = f"""Answer polietly and succinctly using ONLY the context below. Before compiling your answer, check the plan type, section, and language to validate that the context supports an actual answer. If the answer isn't in the context, say you don't know and suggest the member contact support. Do not give medical advice.
+    system_prompt = f"""
+    Specialized Instructions: {instructions}
+    
+    Answer polietly and succinctly using ONLY the context below. Before compiling your answer, check the plan type, section, and language to validate that the context supports an actual answer. If the answer isn't in the context, say you don't know and suggest the member contact support. Do not give medical advice.
 
     **Context:** {context}
 
