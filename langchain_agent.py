@@ -538,9 +538,11 @@ def define_function(question):
 def sql_lookup(question):
     user = f"""
     Convert the question into exactly one read-only SQLite SELECT statement for structured RAG retrieval.
+    
 
     Question: {question}
 
+    You may ONLY use the tables and columns listed below.
     Database schema:
     plans:plan_id,plan_name,monthly_premium,annual_deductible,copay_pct,coverage_type,network_tier
     claims:claim_id,member_id,plan_id,procedure,claim_amount,status,date_filed

@@ -12,7 +12,7 @@ from langchain_agent import retrieve, mcp_client
 
 root = Path(r"C:\Users\micro\Documents\ABTalksAI-Cohort")
 
-async def retrieve_with_retry(question, retries=1, timeout=30):
+async def retrieve_with_retry(question, retries=1, timeout=120):
     for attempt in range(retries + 1):
         try:
             return await asyncio.wait_for(

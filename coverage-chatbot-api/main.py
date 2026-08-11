@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from langchain_agent import generate_answer, load_history, summarize_history
 from multi_agent import graph
+from redact_pii import redact_pii
 
 from fastapi import Request
 import time
@@ -17,6 +18,7 @@ from fastapi.responses import StreamingResponse
 import sqlite3
 from pathlib import Path
 from datetime import datetime, timezone
+from guardrails_config import validate_input, validate_output
 
 db_path = Path(
     r"C:\Users\micro\Documents\ABTalksAI-Cohort\data\coverage.db"
@@ -88,7 +90,10 @@ def get_session(session_id: int, member_id: int) -> SessionState:
         session = SessionState(session_id=session_id, member_id=member_id, history=[])
         session_store[session_id] = session
     elif session.member_id != member_id:
-        session.member_id = member_id
+        raise HTTPException(
+            status_code=403,
+            detail="Session does not belong to this member."
+        )
     return session
 
 
@@ -132,16 +137,61 @@ def health():
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
-    session = get_session(request.session_id, request.member_id)
+
+    session = get_session(
+        request.session_id,
+        request.member_id
+    )
+
+    allowed, reason = validate_input(request.message)
+
+    if not allowed:
+        print(
+            f"INPUT GUARDRAIL | blocked=True | reason={reason}"
+        )
+
+        message = (
+            "I can't process that request because it violates "
+            "the chatbot's safety or privacy guardrails."
+        )
+
+        response = ChatResponse(
+            session_id=session.session_id,
+            member_id=session.member_id,
+            answer=message,
+            structure="",
+            chunk_ids=[],
+            tool_result=None,
+            history=session.history,
+        )
+
+        event = f"data: {response.model_dump_json()}\n\n"
+
+        return StreamingResponse(
+            iter([event]),
+            media_type="text/event-stream"
+        )
+
+    # NOTHING ABOVE HERE should fall through when blocked
+
+    safe_user_message = redact_pii(request.message)
 
     session.history.append(
-        SessionTurn(role="user", message=request.message)
+        SessionTurn(
+            role="user",
+            message=safe_user_message
+        )
     )
 
     save_message(
         session_id=session.session_id,
         role="user",
-        content=request.message
+        content=safe_user_message
+    )
+
+    print(
+        "STORED HISTORY:",
+        load_history(session.session_id, limit=10)
     )
 
     try:
@@ -163,9 +213,9 @@ async def chat(request: ChatRequest):
         })
 
         context = result["context"]
-        structure = result["structure"]
-        chunk_ids = result["chunk_ids"]
-        tool_result = result["tool_result"]
+        structure = result.get("structure") or ""
+        chunk_ids = result.get("chunk_ids") or []
+        tool_result = result.get("tool_result")
         instructions = result["instructions"]
 
         print("ROUTE:", result["route"])
@@ -177,33 +227,50 @@ async def chat(request: ChatRequest):
 
         """
 
+        full_answer = ""
+
+        for token in generate_answer(
+            request.message,
+            context,
+            instructions
+        ):
+            full_answer += token
+
+
+        safe_answer = validate_output(full_answer)
+
+        if not isinstance(safe_answer, str):
+            safe_answer = str(safe_answer or "")
+
+
+        assistant_turn = SessionTurn(
+            role="assistant",
+            message=safe_answer
+        )
+
+        session.history.append(assistant_turn)
+
+
+        save_message(
+            session_id=request.session_id,
+            role="assistant",
+            content=redact_pii(safe_answer)
+        )
+
+
+        response = ChatResponse(
+            session_id=session.session_id,
+            member_id=session.member_id,
+            answer=safe_answer,
+            structure=structure or "",
+            chunk_ids=chunk_ids or [],
+            tool_result=tool_result,
+            history=session.history,
+        )
+
+
         def stream():
-            assistant_turn = SessionTurn(
-                role="assistant",
-                message=""
-            )
-            session.history.append(assistant_turn)
-
-            for token in generate_answer(request.message, context, instructions):
-                assistant_turn.message += token
-
-                response = ChatResponse(
-                    session_id=session.session_id,
-                    member_id=session.member_id,
-                    answer=token,
-                    structure=structure,
-                    chunk_ids = chunk_ids,
-                    tool_result=tool_result,
-                    history=session.history,
-                )
-
-                yield f"data: {response.model_dump_json()}\n\n"
-            
-            save_message(
-                session_id=request.session_id,
-                role="assistant",
-                content=assistant_turn.message
-            )
+            yield f"data: {response.model_dump_json()}\n\n"
 
 
         return StreamingResponse(
