@@ -12,6 +12,10 @@ import tiktoken
 from langchain_ollama import ChatOllama
 from langchain_classic.agents import (AgentExecutor, create_tool_calling_agent)
 from langchain_core.prompts import ChatPromptTemplate
+import json
+import sys
+
+from langchain_mcp_adapters.client import MultiServerMCPClient
 
 openai.OpenAI(
     base_url="http://localhost:11434/v1",
@@ -44,7 +48,22 @@ collection = client.get_collection(name="coverage_kb")
 
 
 
+"""
 
+===== MCP CLIENT ===========
+
+
+"""
+
+mcp_client = MultiServerMCPClient(
+    {
+        "insurance": {
+            "transport": "stdio",
+            "command": sys.executable,
+            "args": [str(root / "mcp_server.py")],
+        }
+    }
+)
 
 
 
@@ -225,186 +244,186 @@ TOOL CALL FUNCTIONS
 
 
 
-class CoverageInput(BaseModel):
-    plan_id: str = Field(
-        description="Plan-identifying ID, for example P101"
-    )
-    procedure: str = Field(
-        description="Medical procedure being checked, for example Surgery"
-    )
+# class CoverageInput(BaseModel):
+#     plan_id: str = Field(
+#         description="Plan-identifying ID, for example P101"
+#     )
+#     procedure: str = Field(
+#         description="Medical procedure being checked, for example Surgery"
+#     )
 
 
-class ClaimStatusInput(BaseModel):
-    claim_id: str = Field(
-        description="Claim-identifying ID, for example C1001"
-    )
+# class ClaimStatusInput(BaseModel):
+#     claim_id: str = Field(
+#         description="Claim-identifying ID, for example C1001"
+#     )
 
 
-class PlanDetailsInput(BaseModel):
-    plan_id: str = Field(
-        description="Plan-identifying ID, for example P101"
-    )
+# class PlanDetailsInput(BaseModel):
+#     plan_id: str = Field(
+#         description="Plan-identifying ID, for example P101"
+#     )
 
 
-class CostEstimateInput(BaseModel):
-    procedure: str = Field(
-        description="Medical procedure being estimated, for example Surgery"
-    )
-    plan_id: str = Field(
-        description="Plan-identifying ID, for example P101"
-    )
+# class CostEstimateInput(BaseModel):
+#     procedure: str = Field(
+#         description="Medical procedure being estimated, for example Surgery"
+#     )
+#     plan_id: str = Field(
+#         description="Plan-identifying ID, for example P101"
+#     )
 
 
-def check_coverage(plan_id, procedure):
-    prompt = f"SELECT CASE WHEN COUNT(*) > 0 THEN 'True' ELSE 'False' END AS MatchExists FROM claims WHERE plan_id = '{plan_id}' AND procedure = '{procedure}'"
+# def check_coverage(plan_id, procedure):
+#     prompt = f"SELECT CASE WHEN COUNT(*) > 0 THEN 'True' ELSE 'False' END AS MatchExists FROM claims WHERE plan_id = '{plan_id}' AND procedure = '{procedure}'"
 
-    cursor = conn.cursor()
-    cursor.execute(prompt)
-    # columns = [column[0] for column in cursor.description]
-    exists = cursor.fetchone()[0] == "True"
+#     cursor = conn.cursor()
+#     cursor.execute(prompt)
+#     # columns = [column[0] for column in cursor.description]
+#     exists = cursor.fetchone()[0] == "True"
 
-    return {
-        "plan_id": plan_id,
-        "procedure": procedure,
-        "covered": exists
-    }
+#     return {
+#         "plan_id": plan_id,
+#         "procedure": procedure,
+#         "covered": exists
+#     }
 
-def get_claim_status(claim_id):
-    prompt = f"SELECT status FROM claims WHERE claim_id = '{claim_id}'"
+# def get_claim_status(claim_id):
+#     prompt = f"SELECT status FROM claims WHERE claim_id = '{claim_id}'"
 
-    cursor = conn.cursor()
-    cursor.execute(prompt)
-    # columns = [column[0] for column in cursor.description]
-    status = cursor.fetchone()[0]
+#     cursor = conn.cursor()
+#     cursor.execute(prompt)
+#     # columns = [column[0] for column in cursor.description]
+#     status = cursor.fetchone()[0]
 
-    return {
-        "claim_id": claim_id,
-        "status": status
-    }
+#     return {
+#         "claim_id": claim_id,
+#         "status": status
+#     }
 
-def get_plan_details(plan_id):
-    normalized_plan = plan_id.replace(" ", "").lower()
+# def get_plan_details(plan_id):
+#     normalized_plan = plan_id.replace(" ", "").lower()
 
-    prompt = """
-        SELECT
-            plan_id,
-            plan_name,
-            monthly_premium,
-            annual_deductible,
-            copay_pct,
-            coverage_type,
-            network_tier
-        FROM plans
-        WHERE LOWER(plan_id) = ?
-           OR REPLACE(LOWER(plan_name), ' ', '') = ?
-    """
+#     prompt = """
+#         SELECT
+#             plan_id,
+#             plan_name,
+#             monthly_premium,
+#             annual_deductible,
+#             copay_pct,
+#             coverage_type,
+#             network_tier
+#         FROM plans
+#         WHERE LOWER(plan_id) = ?
+#            OR REPLACE(LOWER(plan_name), ' ', '') = ?
+#     """
 
-    cursor = conn.cursor()
-    cursor.execute(
-        prompt,
-        (plan_id.lower(), normalized_plan)
-    )
+#     cursor = conn.cursor()
+#     cursor.execute(
+#         prompt,
+#         (plan_id.lower(), normalized_plan)
+#     )
 
-    info = cursor.fetchone()
+#     info = cursor.fetchone()
 
-    if info is None:
-        raise ValueError(
-            f"No plan found for identifier: {plan_id}"
-        )
+#     if info is None:
+#         raise ValueError(
+#             f"No plan found for identifier: {plan_id}"
+#         )
 
-    return {
-        "plan_id": info[0],
-        "plan_name": info[1],
-        "monthly_premium": info[2],
-        "annual_deductible": info[3],
-        "copay_pct": info[4],
-        "coverage_type": info[5],
-        "network_tier": info[6]
-    }
+#     return {
+#         "plan_id": info[0],
+#         "plan_name": info[1],
+#         "monthly_premium": info[2],
+#         "annual_deductible": info[3],
+#         "copay_pct": info[4],
+#         "coverage_type": info[5],
+#         "network_tier": info[6]
+#     }
 
-def estimate_out_of_pocket_cost(procedure, plan_id):
-    prompt = f"SELECT claims.claim_amount * plans.copay_pct / 100.0 AS estimated_out_of_pocket FROM claims JOIN plans ON claims.plan_id = plans.plan_id WHERE claims.plan_id = '{plan_id}' AND claims.procedure = '{procedure}'"
+# def estimate_out_of_pocket_cost(procedure, plan_id):
+#     prompt = f"SELECT claims.claim_amount * plans.copay_pct / 100.0 AS estimated_out_of_pocket FROM claims JOIN plans ON claims.plan_id = plans.plan_id WHERE claims.plan_id = '{plan_id}' AND claims.procedure = '{procedure}'"
 
-    cursor = conn.cursor()
-    cursor.execute(prompt)
-    # columns = [column[0] for column in cursor.description]
-    row = cursor.fetchone()
-    estimate = row[0] if row else None
+#     cursor = conn.cursor()
+#     cursor.execute(prompt)
+#     # columns = [column[0] for column in cursor.description]
+#     row = cursor.fetchone()
+#     estimate = row[0] if row else None
 
-    return {
-        "procedure": procedure,
-        "plan_id": plan_id,
-        "estimated_cost": estimate
-    }
-
-
-
-class CoverageOutput(BaseModel):
-    plan_id: str
-    procedure: str
-    covered: bool
-
-
-class ClaimStatusOutput(BaseModel):
-    claim_id: str
-    status: str
-
-
-class PlanDetailsOutput(BaseModel):
-    plan_id: str
-    plan_name: str
-    monthly_premium: int
-    annual_deductible: int
-    copay_pct: int
-    coverage_type: str
-    network_tier: str
-
-
-class CostEstimateOutput(BaseModel):
-    procedure: str
-    plan_id: str
-    estimated_cost: float | None
+#     return {
+#         "procedure": procedure,
+#         "plan_id": plan_id,
+#         "estimated_cost": estimate
+#     }
 
 
 
-@tool("check_coverage", args_schema=CoverageInput)
-def check_coverage_tool(plan_id: str, procedure: str) -> dict:
-    """Check whether historical approved claim data suggests that a procedure is covered under a plan."""
-
-    result = check_coverage(plan_id, procedure)
-
-    return CoverageOutput.model_validate(result).model_dump()
-
-@tool("get_claim_status", args_schema=ClaimStatusInput)
-def get_claim_status_tool(claim_id:str) -> dict:
-    """Get the current status of a specific insurance claim using its claim ID."""
-
-    result = get_claim_status(claim_id)
-    return ClaimStatusOutput.model_validate(result).model_dump()
-
-@tool("get_plan_details", args_schema=PlanDetailsInput)
-def get_plan_details_tool(plan_id: str) -> dict:
-    """Get premium, deductible, copay, coverage type, network tier, and other details for a specific insurance plan."""
-
-    result = get_plan_details(plan_id)
-
-    return PlanDetailsOutput.model_validate(result).model_dump()
-
-@tool("estimate_out_of_pocket_cost", args_schema=CostEstimateInput)
-def estimate_out_of_pocket_cost_tool(procedure: str,plan_id: str) -> dict:
-    """Estimate a member's out-of-pocket cost for a specific procedure under a specific insurance plan."""
-
-    result = estimate_out_of_pocket_cost(procedure, plan_id)
-
-    return CostEstimateOutput.model_validate(result).model_dump()
+# class CoverageOutput(BaseModel):
+#     plan_id: str
+#     procedure: str
+#     covered: bool
 
 
-tools = [
-    check_coverage_tool,
-    get_claim_status_tool,
-    get_plan_details_tool,
-    estimate_out_of_pocket_cost_tool,
-]
+# class ClaimStatusOutput(BaseModel):
+#     claim_id: str
+#     status: str
+
+
+# class PlanDetailsOutput(BaseModel):
+#     plan_id: str
+#     plan_name: str
+#     monthly_premium: int
+#     annual_deductible: int
+#     copay_pct: int
+#     coverage_type: str
+#     network_tier: str
+
+
+# class CostEstimateOutput(BaseModel):
+#     procedure: str
+#     plan_id: str
+#     estimated_cost: float | None
+
+
+
+# @tool("check_coverage", args_schema=CoverageInput)
+# def check_coverage_tool(plan_id: str, procedure: str) -> dict:
+#     """Check whether historical approved claim data suggests that a procedure is covered under a plan."""
+
+#     result = check_coverage(plan_id, procedure)
+
+#     return CoverageOutput.model_validate(result).model_dump()
+
+# @tool("get_claim_status", args_schema=ClaimStatusInput)
+# def get_claim_status_tool(claim_id:str) -> dict:
+#     """Get the current status of a specific insurance claim using its claim ID."""
+
+#     result = get_claim_status(claim_id)
+#     return ClaimStatusOutput.model_validate(result).model_dump()
+
+# @tool("get_plan_details", args_schema=PlanDetailsInput)
+# def get_plan_details_tool(plan_id: str) -> dict:
+#     """Get premium, deductible, copay, coverage type, network tier, and other details for a specific insurance plan."""
+
+#     result = get_plan_details(plan_id)
+
+#     return PlanDetailsOutput.model_validate(result).model_dump()
+
+# @tool("estimate_out_of_pocket_cost", args_schema=CostEstimateInput)
+# def estimate_out_of_pocket_cost_tool(procedure: str,plan_id: str) -> dict:
+#     """Estimate a member's out-of-pocket cost for a specific procedure under a specific insurance plan."""
+
+#     result = estimate_out_of_pocket_cost(procedure, plan_id)
+
+#     return CostEstimateOutput.model_validate(result).model_dump()
+
+
+# tools = [
+#     check_coverage_tool,
+#     get_claim_status_tool,
+#     get_plan_details_tool,
+#     estimate_out_of_pocket_cost_tool,
+# ]
 
 """
 Questions:
@@ -437,24 +456,44 @@ prompt = ChatPromptTemplate.from_messages([
     ("placeholder", "{agent_scratchpad}")
 ])
 
-agent = create_tool_calling_agent(
-    llm=llm,
-    tools=tools,
-    prompt=prompt
-)
-
-agent_executor = AgentExecutor(
-    agent=agent,
-    tools=tools,
-    verbose=True,
-    return_intermediate_steps=True
-)
+# agent = create_tool_calling_agent(
+#     llm=llm,
+#     tools=tools,
+#     prompt=prompt
+# )
 
 # agent_executor = AgentExecutor(
 #     agent=agent,
 #     tools=tools,
-#     verbose=True
+#     verbose=True,
+#     return_intermediate_steps=True
 # )
+
+_agent_executor = None
+
+
+async def get_agent_executor():
+    global _agent_executor
+
+    if _agent_executor is None:
+        tools = await mcp_client.get_tools()
+
+        print("MCP TOOLS:", [tool.name for tool in tools])
+
+        agent = create_tool_calling_agent(
+            llm=llm,
+            tools=tools,
+            prompt=prompt
+        )
+
+        _agent_executor = AgentExecutor(
+            agent=agent,
+            tools=tools,
+            verbose=True,
+            return_intermediate_steps=True
+        )
+
+    return _agent_executor
 
 
 
@@ -577,10 +616,13 @@ def merge_context(rows, results):
     return "\n\n---\n\n".join(unique_items)
 
 
-def tool_call(question):
-    result = agent_executor.invoke({
+async def tool_call(question):
+    agent_executor = await get_agent_executor()
+
+    result = await agent_executor.ainvoke({
         "input": question
     })
+
 
     reasoning = result.get("intermediate_steps", [])
 
@@ -592,7 +634,7 @@ def tool_call(question):
         file.write(f"{reasoning}\n\n---\n\n")
 
     if reasoning:
-        return reasoning[-1][1]
+        return json.loads(reasoning[-1][1][0]["text"])
 
     return None
 
@@ -616,7 +658,7 @@ AFTER defining the tools and other context retrieval methods, we call all the fu
 
 
 # call all the functions:
-def retrieve(question):
+async def retrieve(question):
     structure = define_function(question)
     print("STRUCTURE:", structure)
     rows = []
@@ -625,7 +667,7 @@ def retrieve(question):
     chunk_ids = []
 
     if structure in ("structured", "both"):
-        tool_result = tool_call(question)
+        tool_result = await tool_call(question)
 
         if tool_result is not None:
             rows = [tool_result]

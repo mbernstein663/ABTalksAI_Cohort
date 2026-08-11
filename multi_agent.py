@@ -1,9 +1,83 @@
 from typing import TypedDict, Literal
 import ollama
 from langgraph.graph import StateGraph, START, END
-from langchain_agent import retrieve
+from langchain_agent import retrieve, load_history, summarize_history
+import sys
+from pathlib import Path
+from langchain_mcp_adapters.client import MultiServerMCPClient
+import asyncio
+import traceback
+
+from langchain_agent import retrieve, mcp_client
+
+root = Path(r"C:\Users\micro\Documents\ABTalksAI-Cohort")
+
+async def retrieve_with_retry(question, retries=1, timeout=30):
+    for attempt in range(retries + 1):
+        try:
+            return await asyncio.wait_for(
+                retrieve(question),
+                timeout=timeout
+            )
+
+        except asyncio.TimeoutError:
+            print(
+                f"Retrieval timeout "
+                f"(attempt {attempt + 1}/{retries + 1})"
+            )
+
+        except Exception as e:
+            print(
+                f"Retrieval error "
+                f"(attempt {attempt + 1}/{retries + 1}): {e}"
+            )
+            traceback.print_exception(type(e), e, e.__traceback__)
+
+        if attempt < retries:
+            await asyncio.sleep(1)
+
+    # fallback path
+    return (
+        "I'm having trouble accessing that right now. "
+        "Please contact member support.",
+        "fallback",
+        [],
+        None
+    )
+
+mcp_client = MultiServerMCPClient(
+    {
+        "insurance": {
+            "transport": "stdio",
+            "command": sys.executable,
+            "args": [str(root / "mcp_server.py")],
+        }
+    }
+)
+
+async def load_tools():
+    tools = await mcp_client.get_tools()
+    for tool in tools:
+        print(tool.name)
+
+    tool_map = {
+        tool.name: tool
+        for tool in tools
+    }
+
+    coverage_tools = [
+        tool_map["check_coverage"],
+        tool_map["get_plan_details"],
+        tool_map["estimate_out_of_pocket_cost"],
+    ]
+
+    claims_tools = [
+        tool_map["get_claim_status"],
+    ]
+    return coverage_tools, claims_tools
 
 class AgentState(TypedDict):
+    session_id: int
     question: str
     route: str
     instructions: str
@@ -13,8 +87,31 @@ class AgentState(TypedDict):
     tool_result: dict | None
     answer: str
 
-def router(state: AgentState):
+def get_question_with_history(state: AgentState):
+
     question = state["question"]
+    session_id = state["session_id"]
+
+    summarize_history(
+        session_id,
+        token_limit=2000
+    )
+
+    history = load_history(
+        session_id,
+        limit=10
+    )
+
+    return f"""
+Conversation history:
+{history}
+
+Current question:
+{question}
+"""
+
+def router(state: AgentState):
+    question = get_question_with_history(state)
 
     prompt = f"""
 Classify the user's question into exactly one category to invoke the correct specialist:
@@ -42,7 +139,7 @@ Clearly classify the question using exactly one routing label:
 coverage
 claims
 
-Question:
+Question and conversation context:
 {question}
 """
 
@@ -72,9 +169,10 @@ Question:
 # AGENT 2: COVERAGE SPECIALIST
 # -------------------------
 
-def coverage_specialist(state: AgentState):
+async def coverage_specialist(state: AgentState):
 
-    question = state["question"]
+    question = get_question_with_history(state)
+
 
     instructions = """
 You are the Coverage Specialist.
@@ -93,7 +191,9 @@ Use retrieved information and tools.
 Do not invent information.
 """
 
-    context, structure, chunk_ids, tool_result = retrieve(question)
+    context, structure, chunk_ids, tool_result = (
+        await retrieve_with_retry(question)
+    )
 
 
     return {
@@ -113,9 +213,10 @@ Do not invent information.
 # AGENT 3: CLAIMS SPECIALIST
 # -------------------------
 
-def claims_specialist(state: AgentState):
+async def claims_specialist(state: AgentState):
 
-    question = state["question"]
+    question = get_question_with_history(state)
+
 
     instructions = """
 You are the Claims Specialist.
@@ -132,7 +233,9 @@ Use retrieved information and tools.
 Do not invent information.
 """
 
-    context, structure, chunk_ids, tool_result = retrieve(question)
+    context, structure, chunk_ids, tool_result = (
+        await retrieve_with_retry(question)
+    )
 
     return {
         "instructions": instructions,
@@ -180,10 +283,15 @@ builder.add_edge("claims_specialist", END)
 graph = builder.compile()
 
 
-if __name__ == "__main__":
-    result = graph.invoke({
+import asyncio
+
+async def main():
+    result = await graph.ainvoke({
+        "session_id": 1,
         "question": "What is the status of claim C1003?"
     })
 
-    print("ROUTE:", result["route"])
-    print("ANSWER:", result["answer"])
+    print(result)
+
+if __name__ == "__main__":
+    asyncio.run(main())

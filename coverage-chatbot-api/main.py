@@ -67,7 +67,7 @@ class ChatResponse(BaseModel):
     answer: str
     structure: str
     chunk_ids: List[str]
-    tool_result: dict | None = None
+    tool_result: dict | None
     history: List[SessionTurn]
 
 
@@ -131,7 +131,7 @@ def health():
 
 
 @app.post("/chat")
-def chat(request: ChatRequest):
+async def chat(request: ChatRequest):
     session = get_session(request.session_id, request.member_id)
 
     session.history.append(
@@ -157,7 +157,8 @@ def chat(request: ChatRequest):
             limit=10
         )
 
-        result = graph.invoke({
+        result = await graph.ainvoke({
+            "session_id": request.session_id,
             "question": request.message
         })
 
