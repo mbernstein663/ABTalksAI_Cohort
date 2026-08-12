@@ -1,3 +1,0 @@
-Step 4 Now- first, test that chatbot works on current history redaction
-
-Pretty sure that redact_pii gets replaced by new file name specified but uses redact_pii function for specific PII term identifiaction

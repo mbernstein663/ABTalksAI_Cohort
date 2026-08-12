@@ -63,6 +63,16 @@ class InputSafetyValidator(Validator):
         "medication",
         "diagnosis",
         "treatment",
+        "surgery",
+        "x-ray",
+
+        "network",
+        "doctor",
+        "provider",
+        "physician",
+        "hospital",
+        "specialist",
+
     ]
 
     def _validate(

@@ -5,6 +5,12 @@ from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
+from token_utils import count_tokens, estimate_cost
+from cache_utils import get_cached_response, save_cached_response
+
 from langchain_agent import generate_answer, load_history, summarize_history
 from multi_agent import graph
 from redact_pii import redact_pii
@@ -48,7 +54,33 @@ def save_message(session_id, role, content):
         )
         conn.commit()
 
-
+def save_token_usage(
+    session_id,
+    input_tokens,
+    output_tokens,
+    estimated_cost
+):
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            """
+            INSERT INTO token_usage (
+                session_id,
+                timestamp,
+                input_tokens,
+                output_tokens,
+                estimated_cost
+            )
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                session_id,
+                datetime.now(timezone.utc).isoformat(),
+                input_tokens,
+                output_tokens,
+                estimated_cost
+            )
+        )
+        conn.commit()
 
 # PYDANTIC CLASSES
 
@@ -97,7 +129,23 @@ def get_session(session_id: int, member_id: int) -> SessionState:
     return session
 
 
+def get_member_id(request: Request):
+    return request.headers.get("X-Member-ID", "unknown")
+
+PRIVATE_TOOLS = {"get_claim_status"}
+
+
+limiter = Limiter(key_func=get_member_id)
+
+
 app = FastAPI()
+
+
+app.state.limiter = limiter
+app.add_exception_handler(
+    RateLimitExceeded,
+    _rate_limit_exceeded_handler
+)
 
 # Add middelware for timeout + error logging
 
@@ -136,14 +184,15 @@ def health():
 
 
 @app.post("/chat")
-async def chat(request: ChatRequest):
+@limiter.limit("5/minute")
+async def chat(request: Request, chat_request: ChatRequest):
 
     session = get_session(
-        request.session_id,
-        request.member_id
+        chat_request.session_id,
+        chat_request.member_id
     )
 
-    allowed, reason = validate_input(request.message)
+    allowed, reason = validate_input(chat_request.message)
 
     if not allowed:
         print(
@@ -174,7 +223,8 @@ async def chat(request: ChatRequest):
 
     # NOTHING ABOVE HERE should fall through when blocked
 
-    safe_user_message = redact_pii(request.message)
+    safe_user_message = redact_pii(chat_request.message)
+    contains_pii = safe_user_message != chat_request.message
 
     session.history.append(
         SessionTurn(
@@ -198,46 +248,88 @@ async def chat(request: ChatRequest):
 
  
         summarize_history(
-            request.session_id,
+            chat_request.session_id,
             token_limit=2000
         )
 
         history = load_history(
-            request.session_id,
+            chat_request.session_id,
             limit=10
         )
 
-        result = await graph.ainvoke({
-            "session_id": request.session_id,
-            "question": request.message
-        })
+        cached = get_cached_response(chat_request.message)
 
-        context = result["context"]
-        structure = result.get("structure") or ""
-        chunk_ids = result.get("chunk_ids") or []
-        tool_result = result.get("tool_result")
-        instructions = result["instructions"]
+        if cached:
+            print("CACHE HIT")
 
-        print("ROUTE:", result["route"])
+            safe_answer = cached["answer"]
+            structure = cached["structure"]
+            chunk_ids = cached["chunk_ids"]
+            tool_result = cached["tool_result"]
 
+        else:
+            print("CACHE MISS")
 
-        context += f"""
-        Conversation history:
-        {history}
+            result = await graph.ainvoke({
+                "session_id": chat_request.session_id,
+                "question": chat_request.message
+            })
 
-        """
+            context = result["context"]
+            structure = result.get("structure") or ""
+            chunk_ids = result.get("chunk_ids") or []
+            tool_result = result.get("tool_result")
+            instructions = result["instructions"]
 
-        full_answer = ""
+            context += f"""
+            Conversation history:
+            {history}
+            """
 
-        for token in generate_answer(
-            request.message,
-            context,
-            instructions
-        ):
-            full_answer += token
+            input_tokens = (
+                count_tokens(chat_request.message)
+                + count_tokens(context)
+                + count_tokens(instructions)
+            )
 
+            full_answer = ""
 
-        safe_answer = validate_output(full_answer)
+            for token in generate_answer(
+                chat_request.message,
+                context,
+                instructions
+            ):
+                full_answer += token
+
+            output_tokens = count_tokens(full_answer)
+
+            safe_answer = validate_output(full_answer)
+
+            if not isinstance(safe_answer, str):
+                safe_answer = str(safe_answer or "")
+
+            used_private_tool = any(
+                tool in PRIVATE_TOOLS
+                for tool in result.get("tools_used", [])
+            )
+
+            cacheable = (
+                not contains_pii
+                and not used_private_tool
+            )
+
+            if cacheable:
+                save_cached_response(
+                    chat_request.message,
+                    {
+                        "answer": safe_answer,
+                        "structure": structure,
+                        "chunk_ids": chunk_ids,
+                        "tool_result": tool_result,
+                    }
+                )
+
+                print("CACHE SET")
 
         if not isinstance(safe_answer, str):
             safe_answer = str(safe_answer or "")
@@ -252,7 +344,7 @@ async def chat(request: ChatRequest):
 
 
         save_message(
-            session_id=request.session_id,
+            session_id=chat_request.session_id,
             role="assistant",
             content=redact_pii(safe_answer)
         )

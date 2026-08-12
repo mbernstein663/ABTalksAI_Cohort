@@ -447,10 +447,11 @@ llm = ChatOllama(
 prompt = ChatPromptTemplate.from_messages([
     (
         "system",
-        "You are a health insurance coverage support agent. "
-        "Use the available tools when the user asks about coverage, "
-        "claim status, plan details, or estimated out-of-pocket cost. "
-        "Use tool results rather than guessing."
+        "You are a tool-calling agent. "
+        "You MUST use an available tool to answer the user's request. "
+        "Do not answer the question yourself. "
+        "Select the appropriate tool, call it using the identifiers provided by the user, "
+        "and use the tool result."
     ),
     ("human", "{input}"),
     ("placeholder", "{agent_scratchpad}")
@@ -584,7 +585,7 @@ def sql_lookup(question):
 
     return [dict(zip(columns, row)) for row in rows]
 
-def vector_lookup(question): 
+def vector_lookup(question, k=5): 
 
     emb_query = model.encode(question)
     results = collection.query(
@@ -660,7 +661,7 @@ AFTER defining the tools and other context retrieval methods, we call all the fu
 
 
 # call all the functions:
-async def retrieve(question):
+async def retrieve(question, k=5):
     structure = define_function(question)
     print("STRUCTURE:", structure)
     rows = []
@@ -674,10 +675,10 @@ async def retrieve(question):
         if tool_result is not None:
             rows = [tool_result]
         else:
-            rows = sql_lookup(question) or []
+            print("NO MCP TOOL CALL")
 
     if structure in ("unstructured", "both"):
-        results = vector_lookup(question) or {}
+        results = vector_lookup(question, k=k) or {}
 
     model_context = merge_context(rows, results)
     chunk_ids = results.get("ids", [[]])[0] if results else []

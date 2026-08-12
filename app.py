@@ -92,6 +92,7 @@ if prompt := st.chat_input("What can I help with?"):
             response = requests.post(
                 url,
                 json=payload,
+                headers={"X-Member-ID": str(st.session_state["member_id"])},
                 stream=True,
                 timeout=(5, 120)
             )
