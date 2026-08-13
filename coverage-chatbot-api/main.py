@@ -25,10 +25,7 @@ import sqlite3
 from pathlib import Path
 from datetime import datetime, timezone
 from guardrails_config import validate_input, validate_output
-
-db_path = Path(
-    r"C:\Users\micro\Documents\ABTalksAI-Cohort\data\coverage.db"
-)
+db_path = Path(__file__).resolve().parent / "data" / "coverage.db"
 
 # SQL FUNCTION
 

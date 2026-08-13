@@ -19,7 +19,7 @@ from response_cards import render_response_extras
 
 
 
-db_path = Path(r"C:\Users\micro\Documents\ABTalksAI-Cohort\data\coverage.db")
+db_path = Path(__file__).resolve().parent / "data" / "coverage.db"
 
 with sqlite3.connect(db_path) as conn:
     plans = conn.execute(
@@ -29,8 +29,7 @@ with sqlite3.connect(db_path) as conn:
 
 
 
-
-url = "http://127.0.0.1:8000/chat"
+url = "http://backend:8000/chat"
 
 st.title("RAG Coverage Chatbot")
 

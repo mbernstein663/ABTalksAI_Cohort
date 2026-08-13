@@ -1,15 +1,46 @@
-pandas 
+pandas
 openpyxl
-ipykernel
-sqlite3
-pdfplumber 
-pypdf 
-python-docx 
-pytesseract 
-pdf2image 
-beautifulsoup4 
+pdfplumber
+pypdf
+python-docx
+pytesseract
+pdf2image
+beautifulsoup4
 requests
-langchain-text-splitters
-sentence-transformers
-scikit-learn
 matplotlib
+scikit-learn
+sentence-transformers
+
+# Frontend
+streamlit
+
+# Backend
+fastapi
+uvicorn
+pydantic
+slowapi
+python-dotenv
+
+# RAG / LLM
+openai
+ollama
+chromadb
+tiktoken
+langchain
+langchain-core
+langchain-classic
+langchain-text-splitters
+langchain-ollama
+langchain-mcp-adapters
+mcp
+
+# Multi-agent
+langgraph
+
+# PII / guardrails
+presidio-analyzer
+presidio-anonymizer
+guardrails-ai
+
+ragas
+langchain-openai

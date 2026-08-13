@@ -24,7 +24,7 @@ openai.OpenAI(
 
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
-root=Path(r"C:\Users\micro\Documents\ABTalksAI-Cohort")
+root = Path(__file__).resolve().parent
 jsonroot = root / "knowledge_base_embed.jsonl"
 db_path = root / "chroma_db"
 dpath = root / "data"

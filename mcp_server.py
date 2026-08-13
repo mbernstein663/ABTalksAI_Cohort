@@ -7,9 +7,7 @@ from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("Coverage Chatbot")
 
-db_path = Path(
-    r"C:\Users\micro\Documents\ABTalksAI-Cohort\data\coverage.db"
-)
+db_path = Path(__file__).resolve().parent / "data" / "coverage.db"
 
 
 @mcp.tool(
