@@ -1,0 +1,18 @@
+{"question": "What is the annual deductible for plan P101?", "ideal_answer": "Plan P101 has an annual deductible of $2,000.", "category": "deductibles"}
+{"question": "What is the annual deductible for plan P102?", "ideal_answer": "Plan P102 has an annual deductible of $1,500.", "category": "deductibles"}
+{"question": "Which has the lower annual deductible, P101 or P102?", "ideal_answer": "P102 has the lower annual deductible at $1,500, compared with $2,000 for P101.", "category": "deductibles"}
+{"question": "What is the annual deductible for plan P103?", "ideal_answer": "Plan P103 has an annual deductible of $1,000.", "category": "deductibles"}
+{"question": "Are X-rays excluded under plan P102?", "ideal_answer": "The supplied data does not define service-specific exclusions, so it does not establish that X-rays are excluded under P102.", "category": "exclusions"}
+{"question": "Is surgery specifically covered or excluded under plan P101?", "ideal_answer": "The supplied data does not define service-specific coverage or exclusions, so it does not establish whether surgery is covered or excluded under P101.", "category": "exclusions"}
+{"question": "What services are explicitly excluded under plan P101?", "ideal_answer": "No service-specific exclusions are defined for P101 in the supplied data.", "category": "exclusions"}
+{"question": "Does the denied X-ray claim C1003 prove that X-rays are excluded under P102?", "ideal_answer": "No. Claim status does not prove that a procedure is always covered or excluded, and the supplied data does not define service-specific exclusions.", "category": "exclusions"}
+{"question": "What is the status of claim C1004?", "ideal_answer": "Claim C1004 is Approved.", "category": "claims_status"}
+{"question": "What is the status of claim C1003?", "ideal_answer": "Claim C1003 is Denied.", "category": "claims_status"}
+{"question": "What is the status of claim C1001?", "ideal_answer": "Claim C1001 is Pending.", "category": "claims_status"}
+{"question": "What is the status of claim C1002?", "ideal_answer": "Claim C1002 is Approved.", "category": "claims_status"}
+{"question": "How do the monthly premiums of P101 and P102 compare?", "ideal_answer": "P101 costs $500 per month and P102 costs $300 per month, so P101 is $200 more expensive per month.", "category": "plan_comparisons"}
+{"question": "How do the annual deductibles of P101 and P102 compare?", "ideal_answer": "P101 has a $2,000 annual deductible and P102 has a $1,500 annual deductible, so P101's deductible is $500 higher.", "category": "plan_comparisons"}
+{"question": "How do the member cost-share rates of P101 and P102 compare?", "ideal_answer": "P101 has a 10% member cost-share rate and P102 has a 20% member cost-share rate, so P101's rate is 10 percentage points lower.", "category": "plan_comparisons"}
+{"question": "How do the coverage type and network tier of P101 and P102 compare?", "ideal_answer": "P101 is a PPO with a Gold network tier, while P102 is an HMO with a Silver network tier.", "category": "plan_comparisons"}
+{"question": "Which plan has the lowest monthly premium among P101, P102, and P103?", "ideal_answer": "P103 has the lowest monthly premium at $150.", "category": "plan_comparisons"}
+{"question": "Which plan has the lowest annual deductible among P101, P102, and P103?", "ideal_answer": "P103 has the lowest annual deductible at $1,000.", "category": "plan_comparisons"}
