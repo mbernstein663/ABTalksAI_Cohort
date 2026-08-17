@@ -25,9 +25,47 @@ import sqlite3
 from pathlib import Path
 from datetime import datetime, timezone
 from guardrails_config import validate_input, validate_output
-db_path = Path(__file__).resolve().parent / "data" / "coverage.db"
+import os
 
+from langfuse import Langfuse
+from langfuse.decorators import langfuse_context, observe
+current_dir = Path(__file__).parent.resolve()
+project_root = current_dir.parent
+db_path = project_root / "data" / "coverage.db"
+db_path.parent.mkdir(parents=True, exist_ok=True)
 # SQL FUNCTION
+
+
+def init_db():
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS conversations (
+                session_id INTEGER,
+                role TEXT,
+                content TEXT,
+                timestamp DATETIME
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS token_usage (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id INTEGER NOT NULL,
+                timestamp TEXT NOT NULL,
+                input_tokens INTEGER NOT NULL,
+                output_tokens INTEGER NOT NULL,
+                estimated_cost REAL NOT NULL
+            )
+            """
+        )
+        conn.commit()
+
+
+init_db()
+
+langfuse = Langfuse()
 
 
 def save_message(session_id, role, content):
@@ -132,75 +170,130 @@ def get_member_id(request: Request):
 PRIVATE_TOOLS = {"get_claim_status"}
 
 
+@observe(as_type="generation", name="llm-generate-answer")
+def call_llm_with_tracing(question: str, context: str, instructions: str):
+    """Runs generate_answer() while logging latency, token usage, and the
+    full prompt/response to Langfuse as a generation nested under the
+    current trace (the /chat request)."""
+ 
+    start_time = time.perf_counter()
+ 
+    full_answer = ""
+    for token in generate_answer(question, context, instructions):
+        full_answer += token
+ 
+    latency_ms = (time.perf_counter() - start_time) * 1000
+ 
+    input_tokens = (
+        count_tokens(question)
+        + count_tokens(context)
+        + count_tokens(instructions)
+    )
+    output_tokens = count_tokens(full_answer)
+ 
+    langfuse_context.update_current_observation(
+        input={
+            "question": question,
+            "context": context,
+            "instructions": instructions,
+        },
+        output=full_answer,
+        usage_details={
+            "input": input_tokens,
+            "output": output_tokens,
+        },
+        metadata={"latency_ms": round(latency_ms, 2)},
+    )
+ 
+    return full_answer, input_tokens, output_tokens, latency_ms
+ 
+ 
 limiter = Limiter(key_func=get_member_id)
-
-
+ 
+ 
 app = FastAPI()
-
-
+ 
+ 
 app.state.limiter = limiter
 app.add_exception_handler(
     RateLimitExceeded,
     _rate_limit_exceeded_handler
 )
-
+ 
 # Add middelware for timeout + error logging
-
+ 
 @app.middleware("http")
 async def log_request_time(request: Request, call_next):
     start_time = time.perf_counter()
     status_code = 500
-
+ 
     try:
         response = await call_next(request)
         status_code = response.status_code
         return response
-
+ 
     finally:
         elapsed_ms = (time.perf_counter() - start_time) * 1000
-
+ 
         print(
             f"{request.method} {request.url.path} "
             f"| status={status_code} "
             f"| time={elapsed_ms:.2f} ms"
         )
-
-
-
+ 
+ 
+ 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
+ 
+ 
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
-
+ 
+ 
+@app.on_event("shutdown")
+def shutdown_flush_langfuse():
+    langfuse.flush()
+ 
+ 
 @app.post("/chat")
 @limiter.limit("5/minute")
+@observe(name="chat")
 async def chat(request: Request, chat_request: ChatRequest):
-
+ 
     session = get_session(
         chat_request.session_id,
         chat_request.member_id
     )
-
+ 
+    langfuse_context.update_current_trace(
+        session_id=str(chat_request.session_id),
+        user_id=str(chat_request.member_id),
+        input=chat_request.message,
+    )
+ 
     allowed, reason = validate_input(chat_request.message)
-
+ 
     if not allowed:
         print(
             f"INPUT GUARDRAIL | blocked=True | reason={reason}"
         )
-
+ 
+        langfuse_context.update_current_trace(
+            tags=["guardrail_blocked"],
+            metadata={"block_reason": reason},
+        )
+ 
         message = (
             "I can't process that request because it violates "
             "the chatbot's safety or privacy guardrails."
         )
-
+ 
         response = ChatResponse(
             session_id=session.session_id,
             member_id=session.member_id,
@@ -210,111 +303,111 @@ async def chat(request: Request, chat_request: ChatRequest):
             tool_result=None,
             history=session.history,
         )
-
+ 
         event = f"data: {response.model_dump_json()}\n\n"
-
+ 
         return StreamingResponse(
             iter([event]),
             media_type="text/event-stream"
         )
-
+ 
     # NOTHING ABOVE HERE should fall through when blocked
-
+ 
     safe_user_message = redact_pii(chat_request.message)
     contains_pii = safe_user_message != chat_request.message
-
+ 
     session.history.append(
         SessionTurn(
             role="user",
             message=safe_user_message
         )
     )
-
+ 
     save_message(
         session_id=session.session_id,
         role="user",
         content=safe_user_message
     )
-
+ 
     print(
         "STORED HISTORY:",
         load_history(session.session_id, limit=10)
     )
-
+ 
     try:
-
+ 
  
         summarize_history(
             chat_request.session_id,
             token_limit=2000
         )
-
+ 
         history = load_history(
             chat_request.session_id,
             limit=10
         )
-
+ 
         cached = get_cached_response(chat_request.message)
-
+ 
         if cached:
             print("CACHE HIT")
-
+ 
+            langfuse_context.update_current_trace(tags=["cache_hit"])
+ 
             safe_answer = cached["answer"]
             structure = cached["structure"]
             chunk_ids = cached["chunk_ids"]
             tool_result = cached["tool_result"]
-
+ 
         else:
             print("CACHE MISS")
-
+ 
+            langfuse_context.update_current_trace(tags=["cache_miss"])
+ 
             result = await graph.ainvoke({
                 "session_id": chat_request.session_id,
                 "question": chat_request.message
             })
-
+ 
             context = result["context"]
             structure = result.get("structure") or ""
             chunk_ids = result.get("chunk_ids") or []
             tool_result = result.get("tool_result")
             instructions = result["instructions"]
-
+ 
             context += f"""
             Conversation history:
             {history}
             """
-
-            input_tokens = (
-                count_tokens(chat_request.message)
-                + count_tokens(context)
-                + count_tokens(instructions)
-            )
-
-            full_answer = ""
-
-            for token in generate_answer(
+ 
+            (
+                full_answer,
+                input_tokens,
+                output_tokens,
+                latency_ms,
+            ) = call_llm_with_tracing(
                 chat_request.message,
                 context,
                 instructions
-            ):
-                full_answer += token
-
-            output_tokens = count_tokens(full_answer)
-
+            )
+ 
+            print(f"LLM latency: {latency_ms:.2f} ms")
+ 
             safe_answer = validate_output(full_answer)
-
+ 
             if not isinstance(safe_answer, str):
                 safe_answer = str(safe_answer or "")
-
+ 
             used_private_tool = any(
                 tool in PRIVATE_TOOLS
                 for tool in result.get("tools_used", [])
             )
-
+ 
             cacheable = (
                 not contains_pii
                 and not used_private_tool
             )
-
+ 
             if cacheable:
                 save_cached_response(
                     chat_request.message,
@@ -325,28 +418,29 @@ async def chat(request: Request, chat_request: ChatRequest):
                         "tool_result": tool_result,
                     }
                 )
-
+ 
                 print("CACHE SET")
-
+ 
         if not isinstance(safe_answer, str):
             safe_answer = str(safe_answer or "")
-
-
+ 
+        langfuse_context.update_current_trace(output=safe_answer)
+ 
         assistant_turn = SessionTurn(
             role="assistant",
             message=safe_answer
         )
-
+ 
         session.history.append(assistant_turn)
-
-
+ 
+ 
         save_message(
             session_id=chat_request.session_id,
             role="assistant",
             content=redact_pii(safe_answer)
         )
-
-
+ 
+ 
         response = ChatResponse(
             session_id=session.session_id,
             member_id=session.member_id,
@@ -356,28 +450,28 @@ async def chat(request: Request, chat_request: ChatRequest):
             tool_result=tool_result,
             history=session.history,
         )
-
-
+ 
+ 
         def stream():
             yield f"data: {response.model_dump_json()}\n\n"
-
-
+ 
+ 
         return StreamingResponse(
             stream(),
             media_type="text/event-stream"
         )
-
+ 
     except Exception as error:
         print("Chat endpoint error:", error)
-
+ 
         raise HTTPException(
             status_code=500,
             detail=str(error)
         )
-
-
-
-
+ 
+ 
+ 
+ 
 @app.get("/history/{session_id}", response_model=SessionState)
 def history(session_id: int):
     session = session_store.get(session_id)
@@ -387,5 +481,5 @@ def history(session_id: int):
             detail="Session not found"
         )
     print("Session History:", session.history)
-
+ 
     return session
